@@ -3,11 +3,14 @@ package com.example.speciesrecord;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.leon.lfilepickerlibrary.LFilePicker;
+import com.leon.lfilepickerlibrary.utils.Constant;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,28 +25,17 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity {
-    String[] records;
-    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+import java.util.List;
 
+public class MainActivity extends AppCompatActivity{
+    String[] records;//整个记录的名称的字符数组
+    //权限
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
     private static final String[] PERMISSIONS_STORAGE = {
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.WRITE_EXTERNAL_STORAGE" };
-
-    //然后通过一个函数来申请
-    public static void verifyStoragePermissions(Activity activity) {
-        try {
-            //检测是否有写的权限
-            int permission = ActivityCompat.checkSelfPermission(activity,
-                    "android.permission.WRITE_EXTERNAL_STORAGE");
-            if (permission != PackageManager.PERMISSION_GRANTED) {
-                // 没有写的权限，去申请写的权限，会弹出对话框
-                ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE,REQUEST_EXTERNAL_STORAGE);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    //文件夹选择
+    private final int REQUESTCODE_FROM_ACTIVITY = 1000;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,10 +49,20 @@ public class MainActivity extends AppCompatActivity {
                 //跳转到增加物种页面
             }
         });
-        findRecords();
         verifyStoragePermissions(this);
     }
 
+    //导入记录时，重写
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            if (requestCode == REQUESTCODE_FROM_ACTIVITY) {
+                List<String> list = data.getStringArrayListExtra(Constant.RESULT_INFO);
+                Toast.makeText(getApplicationContext(), "选中了" + list.size() + "个文件", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
     //右上菜单项
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -88,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
     //跳转到图片页面
     public  void showImages() {
 
@@ -129,6 +132,26 @@ public class MainActivity extends AppCompatActivity {
 
     //导入记录
     public void importRecord() {
+        new LFilePicker()
+                .withActivity(MainActivity.this)
+                .withRequestCode(REQUESTCODE_FROM_ACTIVITY)
+                .withTitle("导入记录")
+                .withChooseMode(true)
+                .start();
+    }
 
+    //申请读写权限
+    public static void verifyStoragePermissions(Activity activity) {
+        try {
+            //检测是否有写的权限
+            int permission = ActivityCompat.checkSelfPermission(activity,
+                    "android.permission.WRITE_EXTERNAL_STORAGE");
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                // 没有写的权限，去申请写的权限，会弹出对话框
+                ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE,REQUEST_EXTERNAL_STORAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
