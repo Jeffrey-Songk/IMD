@@ -25,6 +25,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity{
@@ -49,7 +51,15 @@ public class MainActivity extends AppCompatActivity{
                 //跳转到增加物种页面
             }
         });
+
         verifyStoragePermissions(this);
+        String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records";
+        File recordsDir = new File(recordsPath);
+        File defaultRecord = new File(recordsDir + "/default");
+        if (!recordsDir.exists()) {
+            recordsDir.mkdir();
+            defaultRecord.mkdir();
+        }
     }
 
     //导入记录时，重写
@@ -58,8 +68,8 @@ public class MainActivity extends AppCompatActivity{
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
             if (requestCode == REQUESTCODE_FROM_ACTIVITY) {
-                List<String> list = data.getStringArrayListExtra(Constant.RESULT_INFO);
-                Toast.makeText(getApplicationContext(), "选中了" + list.size() + "个文件", Toast.LENGTH_SHORT).show();
+                String path = data.getStringExtra("path");
+                Toast.makeText(getApplicationContext(), "选中的路径为" + path, Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -136,7 +146,9 @@ public class MainActivity extends AppCompatActivity{
                 .withActivity(MainActivity.this)
                 .withRequestCode(REQUESTCODE_FROM_ACTIVITY)
                 .withTitle("导入记录")
-                .withChooseMode(true)
+                .withChooseMode(false)
+                .withIsGreater(true)
+                .withFileSize(-1)
                 .start();
     }
 
@@ -146,6 +158,8 @@ public class MainActivity extends AppCompatActivity{
             //检测是否有写的权限
             int permission = ActivityCompat.checkSelfPermission(activity,
                     "android.permission.WRITE_EXTERNAL_STORAGE");
+            int permission2 = ActivityCompat.checkSelfPermission(activity,
+                    "android.permission.READ_EXTERNAL_STORAGE");
             if (permission != PackageManager.PERMISSION_GRANTED) {
                 // 没有写的权限，去申请写的权限，会弹出对话框
                 ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE,REQUEST_EXTERNAL_STORAGE);
