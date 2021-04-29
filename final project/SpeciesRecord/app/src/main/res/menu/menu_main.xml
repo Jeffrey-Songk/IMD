@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.speciesrecord.MainActivity">
+    <item
+        android:id="@+id/show_images"
+        android:title="@string/show_images"
+        app:showAsAction="never" />
+    <item android:id="@+id/other_record"
+        android:title="@string/other_record"
+        app:showAsAction="never"/>
+    <item android:id="@+id/new_record"
+        android:title="@string/new_record"
+        app:showAsAction="never"/>
+    <item android:id="@+id/import_record"
+        android:title="@string/import_record"
+        app:showAsAction="never"/>
+</menu>
