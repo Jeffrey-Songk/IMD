@@ -12,9 +12,14 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
+import java.util.Date;
 import java.util.LinkedList;
 
 public class NewSpecies extends AppCompatActivity {
+    private String[] mLevelNames;
+    private String[] mLevelNotes;
+    private Date date;
+    private String address;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -24,9 +29,15 @@ public class NewSpecies extends AppCompatActivity {
     }
 
     public void init() {
+        dataInit();
         //写入相应分类层次的名称后，出现对应层次的备注。如果是种，则还有日期和地点。
         setLevelsListener();
         setNameListener();
+    }
+
+    public void dataInit() {
+        mLevelNames = new String[]{null, null, null, null, null, null, null};
+        mLevelNotes = new String[]{null, null, null, null, null, null, null};
     }
 
     public void setLevelsListener() {
@@ -38,7 +49,7 @@ public class NewSpecies extends AppCompatActivity {
                 (EditText) findViewById(R.id.family_note),
                 (EditText) findViewById(R.id.genus_note)
         };
-        EditText[] mLevelNames = new EditText[]{
+        EditText[] mLevelListeners = new EditText[]{
                 (EditText) findViewById(R.id.kingdom_name),
                 (EditText) findViewById(R.id.phylum_name),
                 (EditText) findViewById(R.id.class_name),
@@ -48,7 +59,7 @@ public class NewSpecies extends AppCompatActivity {
         };
         for(int i = 0; i < 6; i++) {
             int finalI = i;
-            mLevelNames[i].addTextChangedListener(new TextWatcher() {
+            mLevelListeners[i].addTextChangedListener(new TextWatcher() {
                 @Override
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 }
@@ -59,10 +70,30 @@ public class NewSpecies extends AppCompatActivity {
 
                 @Override
                 public void afterTextChanged(Editable s) {
-                    if (!mLevelNames[finalI].getText().toString().equals("")) {
+                    if (!mLevelListeners[finalI].getText().toString().equals("")) {
                         mLevelEditTexts[finalI].setVisibility(View.VISIBLE);
+                        mLevelNames[finalI] = mLevelListeners[finalI].getText().toString();
                     } else {
                         mLevelEditTexts[finalI].setVisibility(View.GONE);
+                        mLevelNames[finalI] = null;
+                    }
+                }
+            });
+            mLevelEditTexts[i].addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    if (!mLevelEditTexts[finalI].getText().toString().equals("")) {
+                        mLevelNotes[finalI] = mLevelEditTexts[finalI].getText().toString();
+                    } else {
+                        mLevelNotes[finalI] = null;
                     }
                 }
             });
@@ -91,7 +122,23 @@ public class NewSpecies extends AppCompatActivity {
         });
     }
 
+    //查找整个记录中是否已有对应层次
+    public boolean isExist(String recordName, String levelName) {
+        String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records";
+        String currentRecordPath = recordsPath + "/" + recordName;
+        return false;
+    }
+
+    //确认添加按钮
     public void add_confirm(View view) {
+        for(int i = 0; i < 7; i++) {
+            if(mLevelNames[i] != null) {
+                System.out.println(mLevelNames[i]);
+                if(mLevelNotes[i] != null) {
+                    System.out.println(mLevelNotes[i]);
+                }
+            }
+        }
         Intent intent = new Intent(NewSpecies.this,MainActivity.class);
         startActivity(intent);
     }
