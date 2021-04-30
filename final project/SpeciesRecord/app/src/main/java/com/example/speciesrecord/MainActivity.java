@@ -49,6 +49,8 @@ public class MainActivity extends AppCompatActivity{
             @Override
             public void onClick(View view) {
                 //跳转到增加物种页面
+                Intent intent = new Intent(MainActivity.this, NewSpecies.class);
+                startActivity(intent);
             }
         });
 
