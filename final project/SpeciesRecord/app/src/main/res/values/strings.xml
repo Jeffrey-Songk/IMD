@@ -7,4 +7,17 @@
     <string name="import_record">导入记录</string>
     <string name="comfirm">确定</string>
     <string name="new_record_text">请输入新记录的名称</string>
+    <string name="optional">选填</string>
+    <string name="kingdom_description">界</string>
+    <string name="phylum_description">门</string>
+    <string name="class_description">纲</string>
+    <string name="order_description">目</string>
+    <string name="family_description">科</string>
+    <string name="genus_description">属</string>
+    <string name="species_description">种</string>
+    <string name="optional_note">备注(选填)</string>
+    <string name="optional_address">地点(选填)</string>
+    <string name="optional_date">日期(选填)</string>
+    <string name="add_confirm">确认添加</string>
+
 </resources>

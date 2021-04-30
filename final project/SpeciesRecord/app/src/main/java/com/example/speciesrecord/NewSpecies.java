@@ -1,0 +1,62 @@
+package com.example.speciesrecord;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+
+public class NewSpecies extends AppCompatActivity {
+    private LinearLayout mSpeciesContainer;
+    private EditText mSpeciesName;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_new_species);
+
+        init();
+    }
+
+    public void init() {
+        //写入相应分类层次的名称后，出现对应层次的备注。如果是种，则还有日期和地点。
+        setLevelsListener();
+        setNameListener();
+    }
+
+    public void setLevelsListener() {
+        RecyclerView levelView = (RecyclerView) findViewById(R.id.level_view);
+        levelView.setLayoutManager(new LinearLayoutManager(this));
+        LevelDescriptionAdapter adapter = new LevelDescriptionAdapter();
+        levelView.setAdapter(adapter);
+    }
+    public void setNameListener() {
+        mSpeciesContainer = (LinearLayout) findViewById(R.id.species_container);
+        mSpeciesName = (EditText) findViewById(R.id.species_name);
+        mSpeciesName.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (!mSpeciesName.getText().toString().equals("")) {
+                    mSpeciesContainer.setVisibility(View.VISIBLE);
+                } else {
+                    mSpeciesContainer.setVisibility(View.GONE);
+                }
+            }
+        });
+    }
+
+    public void add_confirm(View view) {
+    }
+}
