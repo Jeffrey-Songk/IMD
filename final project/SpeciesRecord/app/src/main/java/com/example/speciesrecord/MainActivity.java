@@ -26,12 +26,6 @@ import android.widget.Toast;
 import java.io.File;
 
 public class MainActivity extends AppCompatActivity{
-    String[] records;//整个记录的名称的字符数组
-    //权限
-    private static final int REQUEST_EXTERNAL_STORAGE = 1;
-    private static final String[] PERMISSIONS_STORAGE = {
-            "android.permission.READ_EXTERNAL_STORAGE",
-            "android.permission.WRITE_EXTERNAL_STORAGE" };
     //文件夹选择
     private final int REQUESTCODE_FROM_ACTIVITY = 1000;
     @Override
@@ -105,15 +99,19 @@ public class MainActivity extends AppCompatActivity{
     public void showImages() {
 
     }
-    //初始化Records[]
-    public void findRecords() {
-        records = new String[]{"列表项1", "列表项2", "列表项3"};
-    }
+    //查看所有记录
     public void otherRecord() {
-        findRecords();
+        String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records";
+        File recordsDirs = new File(recordsPath);
+        File[] recordsName = recordsDirs.listFiles();
+        assert recordsName != null;
+        String[] records = new String[recordsName.length];
+        for(int i = 0; i < recordsName.length; i++) {
+            records[i] = recordsName[i].getName();
+        }
         new AlertDialog.Builder(this)
                 .setIcon(R.drawable.ic_icon)
-                .setTitle("其他记录")
+                .setTitle("所有记录")
                 .setItems(records, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -155,6 +153,11 @@ public class MainActivity extends AppCompatActivity{
 
     //申请读写权限
     public static void verifyStoragePermissions(Activity activity) {
+        //权限
+        final int REQUEST_EXTERNAL_STORAGE = 1;
+        final String[] PERMISSIONS_STORAGE = {
+                "android.permission.READ_EXTERNAL_STORAGE",
+                "android.permission.WRITE_EXTERNAL_STORAGE" };
         try {
             //检测是否有写的权限
             int permission = ActivityCompat.checkSelfPermission(activity,

@@ -7,7 +7,7 @@
         android:title="@string/show_images"
         app:showAsAction="never" />
     <item android:id="@+id/other_record"
-        android:title="@string/other_record"
+        android:title="@string/all_record"
         app:showAsAction="never"/>
     <item android:id="@+id/new_record"
         android:title="@string/new_record"

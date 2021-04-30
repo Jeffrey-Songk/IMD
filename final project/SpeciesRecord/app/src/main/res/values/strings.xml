@@ -2,10 +2,10 @@
     <string name="app_name">Species Record</string>
     <string name="FAB_text">Add new</string>
     <string name="show_images">显示图片</string>
-    <string name="other_record">其他记录</string>
+    <string name="all_record">所有记录</string>
     <string name="new_record">新的记录</string>
     <string name="import_record">导入记录</string>
-    <string name="comfirm">确定</string>
+    <string name="confirm">确定</string>
     <string name="new_record_text">请输入新记录的名称</string>
     <string name="optional">选填</string>
     <string name="kingdom_description">界</string>

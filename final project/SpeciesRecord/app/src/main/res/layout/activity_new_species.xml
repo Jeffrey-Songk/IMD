@@ -11,11 +11,137 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/level_view"
-            android:layout_height="wrap_content"
-            android:layout_width="match_parent">
-        </androidx.recyclerview.widget.RecyclerView>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="@string/kingdom_description"
+                android:id="@+id/kingdom_description"
+                style="@style/level_description" />
+
+            <EditText
+                android:id="@+id/kingdom_name"
+                android:hint="@string/optional"
+                style="@style/level_name" />
+        </LinearLayout>
+
+
+        <EditText
+            android:visibility="gone"
+            android:id="@+id/kingdom_note"
+            android:hint="@string/optional_note"
+            style="@style/Level_note" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="@string/phylum_description"
+                android:id="@+id/phylum_description"
+                style="@style/level_description" />
+
+            <EditText
+                android:id="@+id/phylum_name"
+                style="@style/level_name"
+                android:hint="@string/optional" />
+        </LinearLayout>
+
+
+        <EditText
+            android:visibility="gone"
+            android:id="@+id/phylum_note"
+            android:hint="@string/optional_note"
+            style="@style/Level_note" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="@string/class_description"
+                android:id="@+id/class_description"
+                style="@style/level_description" />
+
+            <EditText
+                android:id="@+id/class_name"
+                style="@style/level_name"
+                android:hint="@string/optional" />
+        </LinearLayout>
+
+
+        <EditText
+            android:visibility="gone"
+            android:id="@+id/class_note"
+            android:hint="@string/optional_note"
+            style="@style/Level_note" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="@string/order_description"
+                android:id="@+id/order_description"
+                style="@style/level_description" />
+
+            <EditText
+                android:id="@+id/order_name"
+                style="@style/level_name"
+                android:hint="@string/optional" />
+        </LinearLayout>
+
+
+        <EditText
+            android:visibility="gone"
+            android:id="@+id/order_note"
+            android:hint="@string/optional_note"
+            style="@style/Level_note" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="@string/family_description"
+                android:id="@+id/family_description"
+                style="@style/level_description" />
+
+            <EditText
+                android:id="@+id/family_name"
+                style="@style/level_name"
+                android:hint="@string/optional" />
+        </LinearLayout>
+
+
+        <EditText
+            android:visibility="gone"
+            android:id="@+id/family_note"
+            android:hint="@string/optional_note"
+            style="@style/Level_note" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="@string/genus_description"
+                android:id="@+id/genus_description"
+                style="@style/level_description" />
+
+            <EditText
+                android:id="@+id/genus_name"
+                style="@style/level_name"
+                android:hint="@string/optional" />
+        </LinearLayout>
+
+
+        <EditText
+            android:visibility="gone"
+            android:id="@+id/genus_note"
+            android:hint="@string/optional_note"
+            style="@style/Level_note" />
 
         <LinearLayout
             android:layout_width="match_parent"
