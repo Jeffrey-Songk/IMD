@@ -1,28 +1,43 @@
 package com.example.speciesrecord;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 
 public class NewSpecies extends AppCompatActivity {
-    private EditText mKingdomName;
-    private EditText mKingdomNote;
+    private LinearLayout mSpeciesContainer;
+    private EditText mSpeciesName;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_species);
-        setListeners();
+
+        init();
     }
 
-    //设置对于输入框的监控
-    private void setListeners() {
-        mKingdomName = (EditText)findViewById(R.id.kingdomName);
-        mKingdomNote = (EditText)findViewById(R.id.kingdomNote);
-        mKingdomName.addTextChangedListener(new TextWatcher() {
+    public void init() {
+        //写入相应分类层次的名称后，出现对应层次的备注。如果是种，则还有日期和地点。
+        setLevelsListener();
+        setNameListener();
+    }
+
+    public void setLevelsListener() {
+        RecyclerView levelView = (RecyclerView) findViewById(R.id.level_view);
+        levelView.setLayoutManager(new LinearLayoutManager(this));
+        LevelDescriptionAdapter adapter = new LevelDescriptionAdapter();
+        levelView.setAdapter(adapter);
+    }
+    public void setNameListener() {
+        mSpeciesContainer = (LinearLayout) findViewById(R.id.species_container);
+        mSpeciesName = (EditText) findViewById(R.id.species_name);
+        mSpeciesName.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -33,13 +48,15 @@ public class NewSpecies extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                Boolean judge = !((String) mKingdomName.getText().toString()).equals("");
-                if(judge) {
-                    mKingdomNote.setVisibility(View.VISIBLE);
+                if (!mSpeciesName.getText().toString().equals("")) {
+                    mSpeciesContainer.setVisibility(View.VISIBLE);
                 } else {
-                    mKingdomNote.setVisibility(View.GONE);
+                    mSpeciesContainer.setVisibility(View.GONE);
                 }
             }
         });
+    }
+
+    public void add_confirm(View view) {
     }
 }

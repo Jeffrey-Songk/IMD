@@ -1,7 +1,7 @@
 package com.example.speciesrecord;
 
-import java.sql.Time;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class Level {
     private String name;
@@ -21,14 +21,14 @@ public class Level {
     }
 }
 
-class species extends Level {
-    private Time time;
+class Species extends Level {
+    private Date date;
     private String address;
     private int imagesNum;
     private String[] imagesNote;
 
-    public species(Time time, String address, int imagesNum, String[] imagesNote) {
-        this.time = time;
+    public Species(Date date, String address, int imagesNum, String[] imagesNote) {
+        this.date = date;
         this.address = address;
         this.imagesNum = imagesNum;
         this.imagesNote = imagesNote;

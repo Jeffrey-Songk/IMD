@@ -15,5 +15,9 @@
     <string name="family_description">科</string>
     <string name="genus_description">属</string>
     <string name="species_description">种</string>
+    <string name="optional_note">备注(选填)</string>
+    <string name="optional_address">地点(选填)</string>
+    <string name="optional_date">日期(选填)</string>
+    <string name="add_confirm">确认添加</string>
 
 </resources>

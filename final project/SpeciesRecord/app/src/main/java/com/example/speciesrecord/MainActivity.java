@@ -8,9 +8,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
 import com.leon.lfilepickerlibrary.LFilePicker;
-import com.leon.lfilepickerlibrary.utils.Constant;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,8 +24,6 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity{
     String[] records;//整个记录的名称的字符数组
@@ -42,6 +38,17 @@ public class MainActivity extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        init();
+    }
+
+    public void init() {
+        setPage();//绑定初始化toolbar和FAB
+        verifyStoragePermissions(this);//申请读写权限
+        addDefaultRecord();//配置默认记录
+    }
+    //绑定初始化toolbar和FAB
+    public void setPage() {
         Toolbar toolbar = findViewById(R.id.record_toolbar);
         setSupportActionBar(toolbar);
         FloatingActionButton add_fab = findViewById(R.id.add_fab);
@@ -53,18 +60,8 @@ public class MainActivity extends AppCompatActivity{
                 startActivity(intent);
             }
         });
-
-        verifyStoragePermissions(this);
-        String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records";
-        File recordsDir = new File(recordsPath);
-        File defaultRecord = new File(recordsDir + "/default");
-        if (!recordsDir.exists()) {
-            recordsDir.mkdir();
-            defaultRecord.mkdir();
-        }
     }
-
-    //导入记录时，重写
+    //导入记录时，获得对应文件路径，未完
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -81,6 +78,7 @@ public class MainActivity extends AppCompatActivity{
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
+
     @SuppressLint("NonConstantResourceId")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -104,7 +102,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
     //跳转到图片页面
-    public  void showImages() {
+    public void showImages() {
 
     }
     //初始化Records[]
@@ -112,6 +110,7 @@ public class MainActivity extends AppCompatActivity{
         records = new String[]{"列表项1", "列表项2", "列表项3"};
     }
     public void otherRecord() {
+        findRecords();
         new AlertDialog.Builder(this)
                 .setIcon(R.drawable.ic_icon)
                 .setTitle("其他记录")
@@ -126,9 +125,9 @@ public class MainActivity extends AppCompatActivity{
 
     //新的记录
     public void newRecord() {
-        View view = View.inflate(MainActivity.this, R.layout.new_record, null);
+        View view = View.inflate(MainActivity.this, R.layout.new_record_toast, null);
         final EditText new_name = (EditText) view.findViewById(R.id.new_name);
-        final Button btn = (Button) view.findViewById(R.id.btn_comfirm_new);
+        final Button btn = (Button) view.findViewById(R.id.btn_confirm_new);
         new AlertDialog.Builder(this)
                 .setIcon(R.drawable.ic_icon)
                 .setTitle("新的记录")
@@ -169,5 +168,17 @@ public class MainActivity extends AppCompatActivity{
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    //配置默认记录
+    public void addDefaultRecord() {
+        String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records";
+        File recordsDir = new File(recordsPath);
+        File defaultRecord = new File(recordsDir + "/default by jeffrey");
+        if (recordsDir.exists())
+            return;
+        recordsDir.mkdir();
+        defaultRecord.mkdir();
+        //未完成
     }
 }
