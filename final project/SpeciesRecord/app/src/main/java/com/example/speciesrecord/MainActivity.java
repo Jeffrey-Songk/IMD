@@ -23,7 +23,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity{
     //文件夹选择
@@ -39,20 +42,17 @@ public class MainActivity extends AppCompatActivity{
     public void init() {
         setPage();//绑定初始化toolbar和FAB
         verifyStoragePermissions(this);//申请读写权限
-        addDefaultRecord();//配置默认记录
+        addDefaultFile();//配置默认记录
     }
     //绑定初始化toolbar和FAB
     public void setPage() {
         Toolbar toolbar = findViewById(R.id.record_toolbar);
         setSupportActionBar(toolbar);
         FloatingActionButton add_fab = findViewById(R.id.add_fab);
-        add_fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //跳转到增加物种页面
-                Intent intent = new Intent(MainActivity.this, NewSpecies.class);
-                startActivity(intent);
-            }
+        add_fab.setOnClickListener(view -> {
+            //跳转到增加物种页面
+            Intent intent = new Intent(MainActivity.this, NewSpecies.class);
+            startActivity(intent);
         });
     }
     //导入记录时，获得对应文件路径，未完
@@ -112,11 +112,8 @@ public class MainActivity extends AppCompatActivity{
         new AlertDialog.Builder(this)
                 .setIcon(R.drawable.ic_icon)
                 .setTitle("所有记录")
-                .setItems(records, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        //跳转到对应记录
-                    }
+                .setItems(records, (dialog, which) -> {
+                    //跳转到对应记录
                 })
                 .create().show();
     }
@@ -124,18 +121,14 @@ public class MainActivity extends AppCompatActivity{
     //新的记录
     public void newRecord() {
         View view = View.inflate(MainActivity.this, R.layout.new_record_toast, null);
-        final EditText new_name = (EditText) view.findViewById(R.id.new_name);
-        final Button btn = (Button) view.findViewById(R.id.btn_confirm_new);
+        final Button btn = view.findViewById(R.id.btn_confirm_new);
         new AlertDialog.Builder(this)
                 .setIcon(R.drawable.ic_icon)
                 .setTitle("新的记录")
                 .setView(view)
                 .create().show();
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //初始化相应文件，跳转到新页面
-            }
+        btn.setOnClickListener(v -> {
+            //初始化相应文件，跳转到新页面
         });
     }
 
@@ -162,8 +155,6 @@ public class MainActivity extends AppCompatActivity{
             //检测是否有写的权限
             int permission = ActivityCompat.checkSelfPermission(activity,
                     "android.permission.WRITE_EXTERNAL_STORAGE");
-            int permission2 = ActivityCompat.checkSelfPermission(activity,
-                    "android.permission.READ_EXTERNAL_STORAGE");
             if (permission != PackageManager.PERMISSION_GRANTED) {
                 // 没有写的权限，去申请写的权限，会弹出对话框
                 ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE,REQUEST_EXTERNAL_STORAGE);
@@ -173,15 +164,19 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-    //配置默认记录
-    public void addDefaultRecord() {
+    //配置默认记录，及配置
+    public void addDefaultFile() {
         String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records";
         File recordsDir = new File(recordsPath);
-        File defaultRecord = new File(recordsDir + "/default by jeffrey");
-        if (recordsDir.exists())
-            return;
+//        if (recordsDir.exists())
+//            return;
+        String defaultRecordName = "default by jeffrey";
+        File defaultRecord = new File(recordsDir + "/" + defaultRecordName);
+        File currentRecord = new File(recordsDir + "/currentRecord.txt");
         recordsDir.mkdir();
         defaultRecord.mkdir();
+        FileOperation.writeFile(recordsDir + "/currentRecord.txt", defaultRecordName);
+
         //未完成
     }
 }

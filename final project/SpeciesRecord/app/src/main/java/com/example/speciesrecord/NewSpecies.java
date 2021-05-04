@@ -12,20 +12,32 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Date;
 import java.util.LinkedList;
 
 public class NewSpecies extends AppCompatActivity {
+    private String currentRecord;
     private String[] mLevelNames;
     private String[] mLevelNotes;
-    private Date date;
-    private String address;
+    private String mDate;
+    private String mAddress;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_new_species);
 
         init();
+
     }
 
     public void init() {
@@ -38,26 +50,38 @@ public class NewSpecies extends AppCompatActivity {
     public void dataInit() {
         mLevelNames = new String[]{null, null, null, null, null, null, null};
         mLevelNotes = new String[]{null, null, null, null, null, null, null};
+        String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records/currentRecord.txt";
+        File fileName = new File(recordsPath);
+        if (fileName.isFile()) {
+            FileReader fileReader = null;
+            try {
+                fileReader = new FileReader(recordsPath);
+                BufferedReader bufferReader = new BufferedReader(fileReader);
+                currentRecord = bufferReader.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void setLevelsListener() {
         EditText[] mLevelEditTexts = new EditText[]{
-                (EditText) findViewById(R.id.kingdom_note),
-                (EditText) findViewById(R.id.phylum_note),
-                (EditText) findViewById(R.id.class_note),
-                (EditText) findViewById(R.id.order_note),
-                (EditText) findViewById(R.id.family_note),
-                (EditText) findViewById(R.id.genus_note)
+                findViewById(R.id.kingdom_note),
+                findViewById(R.id.phylum_note),
+                findViewById(R.id.class_note),
+                findViewById(R.id.order_note),
+                findViewById(R.id.family_note),
+                findViewById(R.id.genus_note)
         };
         EditText[] mLevelListeners = new EditText[]{
-                (EditText) findViewById(R.id.kingdom_name),
-                (EditText) findViewById(R.id.phylum_name),
-                (EditText) findViewById(R.id.class_name),
-                (EditText) findViewById(R.id.order_name),
-                (EditText) findViewById(R.id.family_name),
-                (EditText) findViewById(R.id.genus_name)
+                findViewById(R.id.kingdom_name),
+                findViewById(R.id.phylum_name),
+                findViewById(R.id.class_name),
+                findViewById(R.id.order_name),
+                findViewById(R.id.family_name),
+                findViewById(R.id.genus_name)
         };
-        for(int i = 0; i < 6; i++) {
+        for (int i = 0; i < 6; i++) {
             int finalI = i;
             mLevelListeners[i].addTextChangedListener(new TextWatcher() {
                 @Override
@@ -99,9 +123,13 @@ public class NewSpecies extends AppCompatActivity {
             });
         }
     }
+
     public void setNameListener() {
-        LinearLayout mSpeciesContainer = (LinearLayout) findViewById(R.id.species_container);
-        EditText mSpeciesName = (EditText) findViewById(R.id.species_name);
+        LinearLayout mSpeciesContainer = findViewById(R.id.species_container);
+        EditText mSpeciesName = findViewById(R.id.species_name);
+        EditText mSpeciesDate = findViewById(R.id.species_date);
+        EditText mSpeciesAddress = findViewById(R.id.species_address);
+        EditText mSpeciesNote = findViewById(R.id.species_note);
         mSpeciesName.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -114,32 +142,127 @@ public class NewSpecies extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {
                 if (!mSpeciesName.getText().toString().equals("")) {
+                    mLevelNames[6] = mSpeciesName.getText().toString();
                     mSpeciesContainer.setVisibility(View.VISIBLE);
                 } else {
                     mSpeciesContainer.setVisibility(View.GONE);
+                    mLevelNames[6] = null;
+                }
+            }
+        });
+        mSpeciesDate.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (!mSpeciesDate.getText().toString().equals("")) {
+                    mDate = mSpeciesDate.getText().toString();
+                } else {
+                    mDate = null;
+                }
+            }
+        });
+        mSpeciesAddress.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (!mSpeciesAddress.getText().toString().equals("")) {
+                    mAddress = mSpeciesAddress.getText().toString();
+                } else {
+                    mAddress = null;
+                }
+            }
+        });
+        mSpeciesNote.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (!mSpeciesName.getText().toString().equals("")) {
+                    mLevelNotes[6] = mSpeciesNote.getText().toString();
+                } else {
+                    mDate = null;
                 }
             }
         });
     }
 
+    //递归查找是否已有对应文件名的文件
+    public File isExist(String levelName, File fileName, File result) {
+        if (result != null) {
+            return result;
+        }
+        File[] files = fileName.listFiles();
+        if (files == null) {
+            return null;
+        }
+        for (File file : files) {
+            if (file.isDirectory()) {
+                if (file.getName().equals(levelName)) {
+                    return file;
+                }
+                return isExist(levelName, file, null);
+            }
+        }
+        return null;
+    }
+
     //查找整个记录中是否已有对应层次
-    public boolean isExist(String recordName, String levelName) {
+    public File recordExist(String recordName, String levelName) {
         String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records";
         String currentRecordPath = recordsPath + "/" + recordName;
-        return false;
+        File fileName = new File(currentRecordPath);
+        return isExist(levelName, fileName, null);
     }
 
     //确认添加按钮
     public void add_confirm(View view) {
-        for(int i = 0; i < 7; i++) {
-            if(mLevelNames[i] != null) {
-                System.out.println(mLevelNames[i]);
-                if(mLevelNotes[i] != null) {
-                    System.out.println(mLevelNotes[i]);
+        StringBuilder path = new StringBuilder(getExternalCacheDir().getAbsolutePath() + "/records/" + currentRecord);
+        for (int i = 0; i < 7; i++) {
+            if (mLevelNames[i] != null) {
+                File findLevel = recordExist(currentRecord, mLevelNames[i]);
+                if (findLevel == null) {
+                    File newLevel = new File(path + "/" + mLevelNames[i]);
+                    newLevel.mkdir();
+                } else {
+                    File newLevel = new File(path + "/" + mLevelNames[i]);
+                    newLevel.mkdir();
+                    FileOperation.moveFolder(findLevel.toString(), newLevel.toString());
+                }
+                path.append("/").append(mLevelNames[i]);
+                if (mLevelNotes[i] != null) {
+                    FileOperation.writeFile(path + "/note.txt", mLevelNotes[i]);
+                }
+                if (i == 6) {
+                    if (mDate != null) {
+                        FileOperation.writeFile(path + "/date.txt", mDate);
+                    }
+                    if (mAddress != null) {
+                        FileOperation.writeFile(path + "/address.txt", mAddress);
+                    }
                 }
             }
         }
-        Intent intent = new Intent(NewSpecies.this,MainActivity.class);
+        Intent intent = new Intent(NewSpecies.this, MainActivity.class);
         startActivity(intent);
     }
 }
