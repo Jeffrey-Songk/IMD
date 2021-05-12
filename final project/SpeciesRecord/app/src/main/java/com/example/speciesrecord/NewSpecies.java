@@ -28,9 +28,7 @@ public class NewSpecies extends AppCompatActivity {
     private String currentRecord;
     private String[] mLevelNames;
     private String[] mLevelNotes;
-    private String mDate;
-    private String mAddress;
-
+    private final int IMAGE_REQUEST_CODE = 903;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -127,8 +125,6 @@ public class NewSpecies extends AppCompatActivity {
     public void setNameListener() {
         LinearLayout mSpeciesContainer = findViewById(R.id.species_container);
         EditText mSpeciesName = findViewById(R.id.species_name);
-        EditText mSpeciesDate = findViewById(R.id.species_date);
-        EditText mSpeciesAddress = findViewById(R.id.species_address);
         EditText mSpeciesNote = findViewById(R.id.species_note);
         mSpeciesName.addTextChangedListener(new TextWatcher() {
             @Override
@@ -150,42 +146,7 @@ public class NewSpecies extends AppCompatActivity {
                 }
             }
         });
-        mSpeciesDate.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (!mSpeciesDate.getText().toString().equals("")) {
-                    mDate = mSpeciesDate.getText().toString();
-                } else {
-                    mDate = null;
-                }
-            }
-        });
-        mSpeciesAddress.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (!mSpeciesAddress.getText().toString().equals("")) {
-                    mAddress = mSpeciesAddress.getText().toString();
-                } else {
-                    mAddress = null;
-                }
-            }
-        });
         mSpeciesNote.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -200,10 +161,17 @@ public class NewSpecies extends AppCompatActivity {
                 if (!mSpeciesName.getText().toString().equals("")) {
                     mLevelNotes[6] = mSpeciesNote.getText().toString();
                 } else {
-                    mDate = null;
+                    mLevelNotes[6] = null;
                 }
             }
         });
+    }
+
+    public void addPhotos(View view) {
+        Intent intent = new Intent(
+                Intent.ACTION_PICK,
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        startActivityForResult(intent, IMAGE_REQUEST_CODE);
     }
 
     //递归查找是否已有对应文件名的文件
@@ -235,7 +203,7 @@ public class NewSpecies extends AppCompatActivity {
     }
 
     //确认添加按钮
-    public void add_confirm(View view) {
+    public void addConfirm(View view) {
         StringBuilder path = new StringBuilder(getExternalCacheDir().getAbsolutePath() + "/records/" + currentRecord);
         for (int i = 0; i < 7; i++) {
             if (mLevelNames[i] != null) {
@@ -251,14 +219,6 @@ public class NewSpecies extends AppCompatActivity {
                 path.append("/").append(mLevelNames[i]);
                 if (mLevelNotes[i] != null) {
                     FileOperation.writeFile(path + "/note.txt", mLevelNotes[i]);
-                }
-                if (i == 6) {
-                    if (mDate != null) {
-                        FileOperation.writeFile(path + "/date.txt", mDate);
-                    }
-                    if (mAddress != null) {
-                        FileOperation.writeFile(path + "/address.txt", mAddress);
-                    }
                 }
             }
         }
