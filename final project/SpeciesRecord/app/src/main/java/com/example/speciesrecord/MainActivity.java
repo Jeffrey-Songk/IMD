@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity{
         setPage();//绑定初始化toolbar和FAB
         verifyStoragePermissions(this);//申请读写权限
         addDefaultFile();//配置默认记录
+        System.out.println("init");
     }
     //绑定初始化toolbar和FAB
     public void setPage() {
@@ -97,7 +98,7 @@ public class MainActivity extends AppCompatActivity{
 
     //跳转到图片页面
     public void showImages() {
-
+        System.out.println("show");
     }
     //查看所有记录
     public void otherRecord() {
