@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 
 public class FileOperation {
     //在对应path的文件下写入content
@@ -31,8 +32,14 @@ public class FileOperation {
 
     public static String readFile(String path) {
         try {
+            StringBuilder content = new StringBuilder();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
-            return bufferedReader.readLine();
+            content.append(bufferedReader.readLine());
+            String line;
+            while((line = bufferedReader.readLine()) != null) {
+                content.append("\n").append(line);
+            }
+            return content.toString();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {

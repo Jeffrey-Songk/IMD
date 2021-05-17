@@ -172,6 +172,7 @@ public class NewSpecies extends AppCompatActivity {
                 Intent.ACTION_PICK,
                 android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(intent, IMAGE_REQUEST_CODE);
+        //need
     }
 
     //递归查找是否已有对应文件名的文件

@@ -3,7 +3,7 @@ package com.example.speciesrecord;
 import java.util.ArrayList;
 
 public class TypeConversion {
-    public static String[] stringsToArrayList(ArrayList<String> arrayList) {
+    public static String[] arrayListToStrings(ArrayList<String> arrayList) {
         int length = arrayList.size();
         String[] strings = new String[length];
         for(int i = 0; i < length; i++) {
