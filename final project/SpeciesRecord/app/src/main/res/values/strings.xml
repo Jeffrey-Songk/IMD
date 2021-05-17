@@ -20,5 +20,6 @@
     <string name="optional_date">日期(选填)</string>
     <string name="add_confirm">确认添加</string>
     <string name="add_photos_button">添加图片(已选0张)</string>
+    <string name="delete">删除</string>
 
 </resources>

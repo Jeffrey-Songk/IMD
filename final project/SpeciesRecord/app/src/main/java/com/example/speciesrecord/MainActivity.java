@@ -27,10 +27,15 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity{
     //文件夹选择
-    private final int REQUESTCODE_FROM_ACTIVITY = 1000;
+    private final int REQUEST_CODE_FROM_ACTIVITY = 1000;
+    private String tempPath;
+    private String recordsPath;
+    private String recordNow;
+    private ArrayList<String> recordNames;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,7 +48,7 @@ public class MainActivity extends AppCompatActivity{
         setPage();//绑定初始化toolbar和FAB
         verifyStoragePermissions(this);//申请读写权限
         addDefaultFile();//配置默认记录
-        System.out.println("init");
+        dataInit();
     }
     //绑定初始化toolbar和FAB
     public void setPage() {
@@ -61,7 +66,7 @@ public class MainActivity extends AppCompatActivity{
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK) {
-            if (requestCode == REQUESTCODE_FROM_ACTIVITY) {
+            if (requestCode == REQUEST_CODE_FROM_ACTIVITY) {
                 String path = data.getStringExtra("path");
                 Toast.makeText(getApplicationContext(), "选中的路径为" + path, Toast.LENGTH_SHORT).show();
             }
@@ -81,11 +86,14 @@ public class MainActivity extends AppCompatActivity{
             case R.id.show_images:
                 showImages();
                 return true;
-            case R.id.other_record:
-                otherRecord();
+            case R.id.all_record:
+                allRecord();
                 return true;
             case R.id.new_record:
                 newRecord();
+                return true;
+            case R.id.delete:
+                deleteThis();
                 return true;
             case R.id.import_record:
                 importRecord();
@@ -97,19 +105,10 @@ public class MainActivity extends AppCompatActivity{
     }
 
     //跳转到图片页面
-    public void showImages() {
-        System.out.println("show");
-    }
+    public void showImages() {}
     //查看所有记录
-    public void otherRecord() {
-        String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records";
-        File recordsDirs = new File(recordsPath);
-        File[] recordsName = recordsDirs.listFiles();
-        assert recordsName != null;
-        String[] records = new String[recordsName.length];
-        for(int i = 0; i < recordsName.length; i++) {
-            records[i] = recordsName[i].getName();
-        }
+    public void allRecord() {
+        String[] records = TypeConversion.stringsToArrayList(recordNames);
         new AlertDialog.Builder(this)
                 .setIcon(R.drawable.ic_icon)
                 .setTitle("所有记录")
@@ -133,16 +132,20 @@ public class MainActivity extends AppCompatActivity{
         });
     }
 
-    //导入记录
+    //导入记录，查看文件
     public void importRecord() {
         new LFilePicker()
                 .withActivity(MainActivity.this)
-                .withRequestCode(REQUESTCODE_FROM_ACTIVITY)
+                .withRequestCode(REQUEST_CODE_FROM_ACTIVITY)
                 .withTitle("导入记录")
                 .withChooseMode(false)
                 .withIsGreater(true)
                 .withFileSize(-1)
                 .start();
+    }
+
+    public void deleteThis() {
+
     }
 
     //申请读写权限
@@ -167,17 +170,30 @@ public class MainActivity extends AppCompatActivity{
 
     //配置默认记录，及配置
     public void addDefaultFile() {
-        String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records";
+        tempPath = getExternalCacheDir().getAbsolutePath();
+        recordsPath = tempPath + "/records";
+        recordNames = new ArrayList<>();
         File recordsDir = new File(recordsPath);
-//        if (recordsDir.exists())
-//            return;
-        String defaultRecordName = "default by jeffrey";
-        File defaultRecord = new File(recordsDir + "/" + defaultRecordName);
-        File currentRecord = new File(recordsDir + "/currentRecord.txt");
+        if (recordsDir.exists()) {
+            recordNow = FileOperation.readFile(recordsPath + "/currentRecord.txt");
+            return;
+        }
+        recordNow = "default by jeffrey";
+        File defaultRecord = new File(recordsPath + "/" + recordNow);
         recordsDir.mkdir();
         defaultRecord.mkdir();
-        FileOperation.writeFile(recordsDir + "/currentRecord.txt", defaultRecordName);
+        FileOperation.writeFile(recordsPath + "/currentRecord.txt", recordNow);
 
         //未完成
+    }
+
+    public void dataInit() {
+        File[] recordFiles = new File(recordsPath).listFiles();
+        assert recordFiles != null;
+        for(File file: recordFiles) {
+            if(file.isDirectory()) {
+                recordNames.add(file.getName());
+            }
+        }
     }
 }

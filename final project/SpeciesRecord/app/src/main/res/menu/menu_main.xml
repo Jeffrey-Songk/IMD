@@ -6,7 +6,7 @@
         android:id="@+id/show_images"
         android:title="@string/show_images"
         app:showAsAction="never" />
-    <item android:id="@+id/other_record"
+    <item android:id="@+id/all_record"
         android:title="@string/all_record"
         app:showAsAction="never"/>
     <item android:id="@+id/new_record"
@@ -14,5 +14,8 @@
         app:showAsAction="never"/>
     <item android:id="@+id/import_record"
         android:title="@string/import_record"
+        app:showAsAction="never"/>
+    <item android:id="@+id/delete"
+        android:title="@string/delete"
         app:showAsAction="never"/>
 </menu>
