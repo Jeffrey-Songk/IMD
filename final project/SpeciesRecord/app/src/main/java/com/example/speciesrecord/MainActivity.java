@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void init() {
-        verifyStoragePermissions(this);//申请读写权限
+        FileOperation.verifyStoragePermissions(this);//申请读写权限
         addDefaultFile();//配置默认记录
         setPage();//绑定初始化toolbar和FAB
         dataInit();//初始化数据
@@ -154,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
     public void newRecord() {
         View view = View.inflate(MainActivity.this, R.layout.new_record_toast, null);
         final Button btn = view.findViewById(R.id.btn_confirm_new);
-        TextView textView = view.findViewById(R.id.new_name);
+        EditText editText = view.findViewById(R.id.new_name);
         AlertDialog alertDialog = new AlertDialog.Builder(this)
                 .setIcon(R.drawable.ic_icon)
                 .setTitle("新的记录")
@@ -163,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
         alertDialog.show();
         btn.setOnClickListener(v -> {
             //初始化相应文件，跳转到新页面
-            String newName = textView.getText().toString();
+            String newName = editText.getText().toString();
             recordNow = newName;
             tempPath = recordsPath + "/" + newName;
             File newRecord = new File(tempPath);
@@ -201,6 +201,7 @@ public class MainActivity extends AppCompatActivity {
                     .setMessage("这个是删不掉的(别硬删，app直接就崩了0~0)")
                     .setPositiveButton("确定", (dialog, which) -> {})
                     .create().show();
+            return;
         }
         new AlertDialog.Builder(this)
                 .setMessage("你确定要删除此分类及其下所有的记录吗")
@@ -237,26 +238,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         loadList();
-    }
-
-    //申请读写权限
-    public static void verifyStoragePermissions(Activity activity) {
-        //权限
-        final int REQUEST_EXTERNAL_STORAGE = 1;
-        final String[] PERMISSIONS_STORAGE = {
-                "android.permission.READ_EXTERNAL_STORAGE",
-                "android.permission.WRITE_EXTERNAL_STORAGE"};
-        try {
-            //检测是否有写的权限
-            int permission = ActivityCompat.checkSelfPermission(activity,
-                    "android.permission.WRITE_EXTERNAL_STORAGE");
-            if (permission != PackageManager.PERMISSION_GRANTED) {
-                // 没有写的权限，去申请写的权限，会弹出对话框
-                ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     //配置默认记录，及配置
@@ -325,12 +306,9 @@ public class MainActivity extends AppCompatActivity {
         LevelAdapter levelAdapter = new LevelAdapter(MainActivity.this, R.layout.level_list, levels);
         ListView listView = findViewById(R.id.list_view);
         listView.setAdapter(levelAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                tempPath = tempPath + "/" + tempNames.get(position);
-                loadList();
-            }
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            tempPath = tempPath + "/" + tempNames.get(position);
+            loadList();
         });
     }
 }

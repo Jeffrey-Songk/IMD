@@ -13,7 +13,7 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 
 public class LevelAdapter extends ArrayAdapter<Level> {
-    private int id;
+    private final int id;
     public LevelAdapter(@NonNull Context context, int resource, ArrayList<Level> levels) {
         super(context, resource, levels);
         id = resource;
