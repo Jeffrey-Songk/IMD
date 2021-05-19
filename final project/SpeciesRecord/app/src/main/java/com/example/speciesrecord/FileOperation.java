@@ -1,5 +1,12 @@
 package com.example.speciesrecord;
 
+import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -11,6 +18,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
 public class FileOperation {
     //在对应path的文件下写入content
@@ -31,8 +41,14 @@ public class FileOperation {
 
     public static String readFile(String path) {
         try {
+            StringBuilder content = new StringBuilder();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(path)));
-            return bufferedReader.readLine();
+            content.append(bufferedReader.readLine());
+            String line;
+            while((line = bufferedReader.readLine()) != null) {
+                content.append("\n").append(line);
+            }
+            return content.toString();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -102,29 +118,13 @@ public class FileOperation {
     }
 
     //复制单个文件
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public static void copyFile(String oldPath, String newPath) {
         try {
-//           int  bytesum  =  0;
-            int byteread = 0;
-            File oldfile = new File(oldPath);
-            if (oldfile.exists()) {  //文件存在时
-                InputStream inStream = new FileInputStream(oldPath);  //读入原文件
-                FileOutputStream fs = new FileOutputStream(newPath);
-                byte[] buffer = new byte[1444];
-//               int  length;
-                while ((byteread = inStream.read(buffer)) != -1) {
-//                   bytesum  +=  byteread;  //字节数  文件大小
-//                   System.out.println(bytesum);
-                    fs.write(buffer, 0, byteread);
-                }
-                inStream.close();
-            }
+            Files.copy(Paths.get(oldPath), Paths.get(newPath));
         } catch (Exception e) {
-            System.out.println("复制单个文件操作出错");
-            e.printStackTrace();
-
+            System.out.println(e.toString());
         }
-
     }
 
     //复制整个文件夹内容
@@ -168,6 +168,7 @@ public class FileOperation {
     }
 
     //移动文件到指定目录
+    @RequiresApi(api = Build.VERSION_CODES.O)
     public static void moveFile(String oldPath, String newPath) {
         copyFile(oldPath, newPath);
         delFile(oldPath);
@@ -181,5 +182,61 @@ public class FileOperation {
         }
         copyFolder(oldPath, newPath);
         delFolder(oldPath);
+    }
+
+    //申请读写权限
+    public static void verifyStoragePermissions(Activity activity) {
+        //权限
+        final int REQUEST_EXTERNAL_STORAGE = 1;
+        final String[] PERMISSIONS_STORAGE = {
+                "android.permission.READ_EXTERNAL_STORAGE",
+                "android.permission.WRITE_EXTERNAL_STORAGE"};
+        try {
+            //检测是否有写的权限
+            int permission = ActivityCompat.checkSelfPermission(activity,
+                    "android.permission.WRITE_EXTERNAL_STORAGE");
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                // 没有写的权限，去申请写的权限，会弹出对话框
+                ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    //通过文件路径获取文件类型
+    public static String getFileType(String path) {
+        for(int i = path.length() - 1; i >= 0; i--) {
+            if(String.valueOf(path.charAt(i)).equals(".")) {
+                return path.substring(i);
+            }
+        }
+        return null;
+    }
+
+    //通过文件路径获取文件名
+    public static String getFileName(String path) {
+        for(int i = path.length() - 1; i >= 0; i--) {
+            if(String.valueOf(path.charAt(i)).equals("/")) {
+                return path.substring(i + 1);
+            }
+        }
+        return null;
+    }
+
+    //通过文件路径获取文件名(无文件类型)
+    public static String getExactName(String path) {
+        for(int i = path.length() - 1; i >= 0; i--) {
+            if(String.valueOf(path.charAt(i)).equals(".")) {
+                for(int j = i - 1; j >= 0; j--) {
+                    if(String.valueOf(path.charAt(j)).equals("/")) {
+                        System.out.println(path.substring(j + 1, i));
+                        return path.substring(j + 1, i);
+                    }
+                }
+                return null;
+            }
+        }
+        return null;
     }
 }
