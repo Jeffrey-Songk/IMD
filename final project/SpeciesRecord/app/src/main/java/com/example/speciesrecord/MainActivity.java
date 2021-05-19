@@ -5,11 +5,13 @@ import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.leon.lfilepickerlibrary.LFilePicker;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -45,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> recordNames;
     private ArrayList<String> tempNames;
     private ArrayList<String> tempNotes;
+    private ArrayList<String> imageNotes;
+    private int imageNum;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,10 +74,11 @@ public class MainActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         FloatingActionButton add_fab = findViewById(R.id.add_fab);
         add_fab.setOnClickListener(view -> {
-            if(recordNow.equals("default by jeffrey")) {
+            if (recordNow.equals("default by jeffrey")) {
                 new AlertDialog.Builder(this)
                         .setMessage("不得更改0.0")
-                        .setPositiveButton("确定", (dialog, which) -> {})
+                        .setPositiveButton("确定", (dialog, which) -> {
+                        })
                         .create().show();
             } else {
                 //跳转到增加物种页面
@@ -167,10 +172,11 @@ public class MainActivity extends AppCompatActivity {
             recordNow = newName;
             tempPath = recordsPath + "/" + newName;
             File newRecord = new File(tempPath);
-            if(newRecord.isDirectory()) {
+            if (newRecord.isDirectory()) {
                 new AlertDialog.Builder(this)
                         .setMessage("该名称记录已存在")
-                        .setPositiveButton("确定", (dialog, which) -> {})
+                        .setPositiveButton("确定", (dialog, which) -> {
+                        })
                         .create().show();
             } else {
                 newRecord.mkdir();
@@ -188,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
                 .withActivity(MainActivity.this)
                 .withRequestCode(REQUEST_CODE_FROM_ACTIVITY)
                 .withTitle("导入记录")
-                .withChooseMode(false)
+                .withChooseMode(true)
                 .withIsGreater(true)
                 .withFileSize(-1)
                 .start();
@@ -196,10 +202,11 @@ public class MainActivity extends AppCompatActivity {
 
     //删除
     public void deleteThis() {
-        if(recordNow.equals("default by jeffrey")) {
+        if (recordNow.equals("default by jeffrey")) {
             new AlertDialog.Builder(this)
                     .setMessage("这个是删不掉的(别硬删，app直接就崩了0~0)")
-                    .setPositiveButton("确定", (dialog, which) -> {})
+                    .setPositiveButton("确定", (dialog, which) -> {
+                    })
                     .create().show();
             return;
         }
@@ -207,9 +214,9 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage("你确定要删除此分类及其下所有的记录吗")
                 .setPositiveButton("确定", ((dialog, which) -> {
                     FileOperation.delFolder(tempPath);
-                    for(int i = tempPath.length() - 1; i >= 0; i--) {
-                        if(String.valueOf(tempPath.charAt(i)).equals("/")) {
-                            if(tempPath.substring(i + 1).equals(recordNow)) {
+                    for (int i = tempPath.length() - 1; i >= 0; i--) {
+                        if (String.valueOf(tempPath.charAt(i)).equals("/")) {
+                            if (tempPath.substring(i + 1).equals(recordNow)) {
                                 recordNow = "default by jeffrey";
                                 tempPath = recordsPath + "/" + "default by jeffrey";
                                 dataInit();
@@ -221,15 +228,16 @@ public class MainActivity extends AppCompatActivity {
                     }
                     loadList();
                 }))
-                .setNegativeButton("取消", (dialog, which) -> {})
+                .setNegativeButton("取消", (dialog, which) -> {
+                })
                 .create().show();
     }
 
     //返回上一层
     public void toHigherLevel() {
-        for(int i = tempPath.length() - 1; i >= 0; i--) {
-            if(String.valueOf(tempPath.charAt(i)).equals("/")) {
-                if(tempPath.substring(i + 1).equals(recordNow)) {
+        for (int i = tempPath.length() - 1; i >= 0; i--) {
+            if (String.valueOf(tempPath.charAt(i)).equals("/")) {
+                if (tempPath.substring(i + 1).equals(recordNow)) {
                     allRecord();
                     break;
                 }
@@ -275,10 +283,13 @@ public class MainActivity extends AppCompatActivity {
 
     //加载每个层次名
     public void loadList() {
+        Objects.requireNonNull(getSupportActionBar()).setTitle(FileOperation.getFileName(tempPath));
         File[] levelFiles = new File(tempPath).listFiles();
         if (levelFiles == null) {
             return;
         }
+        imageNum = 0;
+        imageNotes = new ArrayList<>();
         tempNames = new ArrayList<>();
         tempNotes = new ArrayList<>();
         for (File file : levelFiles) {
@@ -300,7 +311,23 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 tempNotes.add(temp);
+            } else {
+                switch (Objects.requireNonNull(FileOperation.getFileType(file.toString()))) {
+                    case (".txt"):
+                        if (!FileOperation.getExactName(file.toString()).equals(FileOperation.getFileName(tempPath))) {
+                            imageNotes.add(FileOperation.readFile(file.toString()));
+                        }
+                        break;
+                    case (".jpg"):
+                    case (".pdf"):
+                    case (".png"):
+                    case (".jpeg"):
+                        imageNum++;
+                }
             }
+        }
+        if (imageNum > 0) {
+            return;
         }
         ArrayList<Level> levels = Level.getLevels(tempNames, tempNotes);
         LevelAdapter levelAdapter = new LevelAdapter(MainActivity.this, R.layout.level_list, levels);

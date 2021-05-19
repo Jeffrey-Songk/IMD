@@ -258,13 +258,7 @@ public class NewSpecies extends AppCompatActivity {
                 }
                 if (i == 6 && imagePaths.size() > 0) {
                     for(int j = 0; j < imagePaths.size(); j++) {
-                        try {
-                            FileOperation.copyFile(imagePaths.get(j), path + "/" + (j + 1) + ".jpg");
-                            Path old = Paths.get(imagePaths.get(j));
-                            Files.copy(old, Paths.get(path + "/" + (j + 1) + ".jpg"));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+                        FileOperation.copyFile(imagePaths.get(j), path + "/" + (j + 1) + FileOperation.getFileType(imagePaths.get(j)));
                     }
                 }
             }
