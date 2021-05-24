@@ -68,7 +68,6 @@ public class FileOperation {
         } catch (Exception e) {
             System.out.println("删除文件操作出错");
             e.printStackTrace();
-
         }
 
     }
@@ -204,7 +203,7 @@ public class FileOperation {
         }
     }
 
-    //通过文件路径获取文件类型
+    //通过文件路径获取文件类型，含.
     public static String getFileType(String path) {
         for(int i = path.length() - 1; i >= 0; i--) {
             if(String.valueOf(path.charAt(i)).equals(".")) {
