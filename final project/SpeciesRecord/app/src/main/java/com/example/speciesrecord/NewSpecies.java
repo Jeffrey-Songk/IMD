@@ -3,31 +3,26 @@ package com.example.speciesrecord;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import android.widget.Toast;
 import java.util.ArrayList;
 
 public class NewSpecies extends AppCompatActivity {
-    private String currentRecord;
     private String[] mLevelNames;
     private String[] mLevelNotes;
     private ArrayList<String> imagePaths;
@@ -50,21 +45,10 @@ public class NewSpecies extends AppCompatActivity {
     }
 
     public void dataInit() {
-        imagePaths = new ArrayList<>();
-        imageNotes = new ArrayList<>();
-        mLevelNames = new String[]{null, null, null, null, null, null, null};
-        mLevelNotes = new String[]{null, null, null, null, null, null, null};
-        String recordsPath = getExternalCacheDir().getAbsolutePath() + "/records/currentRecord.txt";
-        File fileName = new File(recordsPath);
-        if (fileName.isFile()) {
-            try {
-                FileReader fileReader = new FileReader(recordsPath);
-                BufferedReader bufferReader = new BufferedReader(fileReader);
-                currentRecord = bufferReader.readLine();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        this.imagePaths = new ArrayList<>();
+        this.imageNotes = new ArrayList<>();
+        this.mLevelNames = new String[]{null, null, null, null, null, null, null};
+        this.mLevelNotes = new String[]{null, null, null, null, null, null, null};
     }
 
     public void setLevelsListener() {
@@ -177,8 +161,9 @@ public class NewSpecies extends AppCompatActivity {
                 Intent.ACTION_PICK,
                 android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         startActivityForResult(intent, IMAGE_REQUEST_CODE);
-        //need
     }
+
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -188,12 +173,16 @@ public class NewSpecies extends AppCompatActivity {
             Cursor c = getContentResolver().query(selectedImage, filePathColumns, null, null, null);
             c.moveToFirst();
             int columnIndex = c.getColumnIndex(filePathColumns[0]);
+            if(imageNotes.size() < imagePaths.size()) imageNotes.add(null);
             imagePaths.add(c.getString(columnIndex));
             c.close();
 
             View view = View.inflate(NewSpecies.this, R.layout.new_record_toast, null);
             final Button btn = view.findViewById(R.id.btn_confirm_new);
             EditText editText = view.findViewById(R.id.new_name);
+            editText.setInputType(InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE);
+            editText.setSingleLine(false);
+            editText.setMaxLines(5);
             editText.setHint("请输入对该图片的描述");
             AlertDialog alertDialog = new AlertDialog.Builder(this)
                     .setTitle("图片备注")
@@ -205,63 +194,98 @@ public class NewSpecies extends AppCompatActivity {
                 imageNotes.add(editText.getText().toString());
                 alertDialog.cancel();
             });
-            if(imageNotes.size() < imagePaths.size()) imageNotes.add(null);
+            Button button = findViewById(R.id.add_photo);
+            button.setText("添加图片(已选" + imagePaths.size() + "张)");
         }
     }
 
     //递归查找是否已有对应文件名的文件
-    public File isExist(String levelName, File fileName, File result) {
-        if (result != null) {
-            return result;
-        }
-        File[] files = fileName.listFiles();
-        if (files == null || files.length == 0) {
-            return null;
-        }
-        File temp;
-        for (File file: files) {
-            if (file.isDirectory()) {
-                if (file.getName().equals(levelName)) {
-                    return file;
-                }
-                temp = isExist(levelName, file, null);
-                if(temp != null) {
-                    return temp;
-                }
-            }
-        }
-        return null;
-    }
-
-    //查找整个记录中是否已有对应层次
-    public File recordExist(String levelName) {
-        String currentRecordPath = getExternalCacheDir().getAbsolutePath() + "/records/" + currentRecord;
-        File fileName = new File(currentRecordPath);
-        return isExist(levelName, fileName, null);
-    }
+//    public File isExist(String levelName, File fileName, File result) {
+//        if (result != null) {
+//            return result;
+//        }
+//        File[] files = fileName.listFiles();
+//        if (files == null || files.length == 0) {
+//            return null;
+//        }
+//        File temp;
+//        for (File file: files) {
+//            if (file.isDirectory()) {
+//                if (file.getName().equals(levelName)) {
+//                    return file;
+//                }
+//                temp = isExist(levelName, file, null);
+//                if(temp != null) {
+//                    return temp;
+//                }
+//            }
+//        }
+//        return null;
+//    }
+//
+//    //查找整个记录中是否已有对应层次
+//    public File recordExist(String levelName) {
+//        String currentRecordPath = getExternalCacheDir().getAbsolutePath() + "/records/" + MainActivity.recordNow;
+//        File fileName = new File(currentRecordPath);
+//        return isExist(levelName, fileName, null);
+//    }
 
     //确认添加按钮
     @RequiresApi(api = Build.VERSION_CODES.O)
     public void addConfirm(View view) {
-        StringBuilder path = new StringBuilder(getExternalCacheDir().getAbsolutePath() + "/records/" + currentRecord);
-        for (int i = 0; i < 7; i++) {
-            if (mLevelNames[i] != null) {
-                File findLevel = recordExist(mLevelNames[i]);
-                File newLevel = new File(path + "/" + mLevelNames[i]);
-                newLevel.mkdir();
-                if (findLevel != null) {
-                    FileOperation.moveFolder(findLevel.toString(), newLevel.toString());
-                }
-                path.append("/").append(mLevelNames[i]);
-                if (mLevelNotes[i] != null) {
-                    FileOperation.writeFile(path + "/note.txt", mLevelNotes[i]);
-                }
-                if (i == 6 && imagePaths.size() > 0) {
-                    for(int j = 0; j < imagePaths.size(); j++) {
-                        FileOperation.copyFile(imagePaths.get(j), path + "/" + (j + 1) + FileOperation.getFileType(imagePaths.get(j)));
+        MainActivity.sharedPreferences = getSharedPreferences(MainActivity.recordNow, Context.MODE_PRIVATE);
+        boolean rationality = true;
+        String temp = MainActivity.recordNow;
+        for(int i = 0; i < 7; i++) {
+            if(mLevelNames[i] != null) {
+                int temp1 = MainActivity.sharedPreferences.getInt(mLevelNames[i], -1);
+                if(temp1 == -1) {
+                    SharedPreferences.Editor editor = MainActivity.sharedPreferences.edit();
+                    editor.putInt(mLevelNames[i], i);
+                    editor.putString(temp + "_next_" + SharedPreferencesOperation.next(temp, mLevelNames[i]), mLevelNames[i]);
+                    editor.putString(mLevelNames[i] + "_previous", temp);
+                    editor.apply();
+                } else if(temp1 != i) {
+                    rationality = false;
+                    break;
+                } else {
+                    String temp2 = MainActivity.sharedPreferences.getString(mLevelNames[i] + "_previous", null);
+                    if(MainActivity.sharedPreferences.getInt(temp2, -1)
+                            >= MainActivity.sharedPreferences.getInt(temp, -1)) {
+                        SharedPreferences.Editor editor2 = MainActivity.sharedPreferences.edit();
+                        editor2.putString(mLevelNames[i] + "_previous", temp2);
+                        editor2.putString(temp2 + "_next_" + SharedPreferencesOperation.next(temp2, mLevelNames[i]), mLevelNames[i]);
+                        editor2.apply();
+                    } else {
+                        SharedPreferences.Editor editor3 = MainActivity.sharedPreferences.edit();
+                        editor3.putString(mLevelNames[i] + "_previous", temp);
+                        editor3.putString(temp + "_next_" + SharedPreferencesOperation.next(temp, mLevelNames[i]), mLevelNames[i]);
+                        editor3.apply();
+                        int temp3 = SharedPreferencesOperation.find(temp2 + "_next_", mLevelNames[i]);
+                        SharedPreferencesOperation.delete(temp2 + "_next_", temp3);
                     }
                 }
+                if(mLevelNotes[i] != null){
+                    SharedPreferences.Editor editor1 = MainActivity.sharedPreferences.edit();
+                    editor1.putString(mLevelNames[i] + "_note", mLevelNotes[i]);
+                    editor1.apply();
+                }
+                if(i == 6) {
+                    SharedPreferences.Editor editor1 = MainActivity.sharedPreferences.edit();
+                    for(int j = 0; j < imagePaths.size(); j++) {
+                        editor1.putString(mLevelNames[i] + "_image_" + j, imagePaths.get(j));
+                        if(mLevelNotes[j] != null) {
+                            editor1.putString(mLevelNames[i] + "_image_note_" + j, imageNotes.get(j));
+                        }
+                    }
+                    editor1.apply();
+                }
+                temp = mLevelNames[i];
             }
+        }
+        if(!rationality) {
+            Toast.makeText(this, "写入数据与存储数据冲突", Toast.LENGTH_LONG).show();
+            return;
         }
         Intent intent = new Intent(NewSpecies.this, MainActivity.class);
         startActivity(intent);
