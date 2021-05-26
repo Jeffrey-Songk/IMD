@@ -1,16 +1,13 @@
 package com.example.speciesrecord;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
@@ -39,7 +36,6 @@ public class NewSpecies extends AppCompatActivity {
     public void init() {
         FileOperation.verifyStoragePermissions(this);
         dataInit();
-        //写入相应分类层次的名称后，出现对应层次的备注。如果是种，则还有日期和地点。
         setLevelsListener();
         setNameListener();
     }
@@ -68,6 +64,7 @@ public class NewSpecies extends AppCompatActivity {
                 findViewById(R.id.family_name),
                 findViewById(R.id.genus_name)
         };
+        MainActivity.sharedPreferences = getSharedPreferences(MainActivity.recordNow, Context.MODE_PRIVATE);
         for (int i = 0; i < 6; i++) {
             int finalI = i;
             mLevelListeners[i].addTextChangedListener(new TextWatcher() {
@@ -84,6 +81,15 @@ public class NewSpecies extends AppCompatActivity {
                     if (!mLevelListeners[finalI].getText().toString().equals("")) {
                         mLevelEditTexts[finalI].setVisibility(View.VISIBLE);
                         mLevelNames[finalI] = mLevelListeners[finalI].getText().toString();
+                        int where = MainActivity.sharedPreferences.getInt(mLevelNames[finalI], -1);
+                        if(where != -1) {
+                            mLevelEditTexts[finalI].setText(MainActivity.sharedPreferences.getString(mLevelNames[finalI] + "_note", null));
+                            String previous = MainActivity.sharedPreferences.getString(mLevelNames[finalI] + "_previous", null);
+                            int where1 = MainActivity.sharedPreferences.getInt(previous, -1);
+                            if(where1 != -1) {
+                                mLevelListeners[where1].setText(previous);
+                            }
+                        }
                     } else {
                         mLevelEditTexts[finalI].setVisibility(View.GONE);
                         mLevelNames[finalI] = null;
@@ -108,6 +114,10 @@ public class NewSpecies extends AppCompatActivity {
                     }
                 }
             });
+        }
+        int level = MainActivity.sharedPreferences.getInt(MainActivity.levelNow, -1);
+        if(level != -1) {
+            mLevelListeners[level].setText(MainActivity.levelNow);
         }
     }
 
@@ -163,7 +173,6 @@ public class NewSpecies extends AppCompatActivity {
         startActivityForResult(intent, IMAGE_REQUEST_CODE);
     }
 
-    @SuppressLint("SetTextI18n")
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -176,7 +185,6 @@ public class NewSpecies extends AppCompatActivity {
             if(imageNotes.size() < imagePaths.size()) imageNotes.add(null);
             imagePaths.add(c.getString(columnIndex));
             c.close();
-
             View view = View.inflate(NewSpecies.this, R.layout.new_record_toast, null);
             final Button btn = view.findViewById(R.id.btn_confirm_new);
             EditText editText = view.findViewById(R.id.new_name);
@@ -195,43 +203,12 @@ public class NewSpecies extends AppCompatActivity {
                 alertDialog.cancel();
             });
             Button button = findViewById(R.id.add_photo);
-            button.setText("添加图片(已选" + imagePaths.size() + "张)");
+            String temp = "添加图片(已选" + imagePaths.size() + "张)";
+            button.setText(temp);
         }
     }
 
-    //递归查找是否已有对应文件名的文件
-//    public File isExist(String levelName, File fileName, File result) {
-//        if (result != null) {
-//            return result;
-//        }
-//        File[] files = fileName.listFiles();
-//        if (files == null || files.length == 0) {
-//            return null;
-//        }
-//        File temp;
-//        for (File file: files) {
-//            if (file.isDirectory()) {
-//                if (file.getName().equals(levelName)) {
-//                    return file;
-//                }
-//                temp = isExist(levelName, file, null);
-//                if(temp != null) {
-//                    return temp;
-//                }
-//            }
-//        }
-//        return null;
-//    }
-//
-//    //查找整个记录中是否已有对应层次
-//    public File recordExist(String levelName) {
-//        String currentRecordPath = getExternalCacheDir().getAbsolutePath() + "/records/" + MainActivity.recordNow;
-//        File fileName = new File(currentRecordPath);
-//        return isExist(levelName, fileName, null);
-//    }
-
     //确认添加按钮
-    @RequiresApi(api = Build.VERSION_CODES.O)
     public void addConfirm(View view) {
         MainActivity.sharedPreferences = getSharedPreferences(MainActivity.recordNow, Context.MODE_PRIVATE);
         boolean rationality = true;

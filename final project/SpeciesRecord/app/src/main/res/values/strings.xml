@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Species Record</string>
     <string name="FAB_text">Add new</string>
-    <string name="show_images">显示图片</string>
+    <string name="show_images">图片模式</string>
     <string name="all_record">所有记录</string>
     <string name="new_record">新的记录</string>
     <string name="import_record">导入记录</string>

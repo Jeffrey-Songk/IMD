@@ -1,12 +1,12 @@
 package com.example.speciesrecord;
 
-import android.annotation.SuppressLint;
+import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.leon.lfilepickerlibrary.LFilePicker;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -17,14 +17,16 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Toast;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
-    private final int REQUEST_CODE_FROM_ACTIVITY = 1000;
     protected static String levelNow;
     protected static String recordNow;
+    private boolean photoMode = false;
     private ArrayList<String> recordNames;
     protected static SharedPreferences sharedPreferences;
 
@@ -77,18 +79,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 
-    //导入记录时，获得对应文件路径，需删除
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK) {
-            if (requestCode == REQUEST_CODE_FROM_ACTIVITY) {
-                String path = data.getStringExtra("path");
-                Toast.makeText(getApplicationContext(), "选中的路径为" + path, Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
     //右上菜单项
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -96,36 +86,35 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    @SuppressLint("NonConstantResourceId")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.show_images:
-                showImages();
-                return true;
-            case R.id.all_record:
-                allRecord();
-                return true;
-            case R.id.new_record:
-                newRecord();
-                return true;
-            case R.id.delete:
-                deleteThis();
-                return true;
-            case R.id.import_record:
-                importRecord();
-                return true;
-            case android.R.id.home:
-                toHigherLevel();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        if (item.getItemId() == R.id.show_images) {
+            showImages(item);
+            return true;
+        } else if (item.getItemId() == R.id.all_record) {
+            allRecord();
+            return true;
+        } else if (item.getItemId() == R.id.new_record) {
+            newRecord();
+            return true;
+        } else if (item.getItemId() == R.id.delete) {
+            deleteThis();
+            return true;
+        } else if (item.getItemId() == android.R.id.home) {
+            toHigherLevel();
+            return true;
+        } else {
+            return super.onOptionsItemSelected(item);
         }
-
     }
 
     //跳转到图片页面， 未写
-    public void showImages() {
+    public void showImages(MenuItem item) {
+        if(item.getTitle().toString().equals("图片模式")) {
+            item.setTitle("初始页面");
+            return;
+        }
+        item.setTitle("图片模式");
     }
 
     //查看所有记录，并可跳转
@@ -166,20 +155,20 @@ public class MainActivity extends AppCompatActivity {
             int i = 0;
             boolean isExist = false;
             String temp = sharedPreferences.getString("record_name_" + i, null);
-            while(temp != null) {
-                if(temp.equals(newName)) {
+            while (temp != null) {
+                if (temp.equals(newName)) {
                     new AlertDialog.Builder(this)
-                        .setMessage("该名称记录已存在")
-                        .setPositiveButton("确定", (dialog, which) -> {
-                        })
-                        .create().show();
+                            .setMessage("该名称记录已存在")
+                            .setPositiveButton("确定", (dialog, which) -> {
+                            })
+                            .create().show();
                     isExist = true;
                     break;
                 }
                 i++;
                 temp = sharedPreferences.getString("record_name_" + i, null);
             }
-            if(!isExist) {
+            if (!isExist) {
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString("record_name_" + i, newName);
                 editor.putString("currentRecord", newName);
@@ -191,19 +180,6 @@ public class MainActivity extends AppCompatActivity {
                 loadList();
             }
         });
-    }
-
-    //导入记录，查看文件
-    //no need
-    public void importRecord() {
-        new LFilePicker()
-                .withActivity(MainActivity.this)
-                .withRequestCode(REQUEST_CODE_FROM_ACTIVITY)
-                .withTitle("导入记录")
-                .withChooseMode(true)
-                .withIsGreater(true)
-                .withFileSize(-1)
-                .start();
     }
 
     //删除
@@ -220,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage("你确定要删除此分类及其下所有的记录吗")
                 .setPositiveButton("确定", ((dialog, which) -> {
                     sharedPreferences = getSharedPreferences(recordNow, Context.MODE_PRIVATE);
-                    if(recordNow.equals(levelNow)) {
+                    if (recordNow.equals(levelNow)) {
                         SharedPreferences.Editor editor = sharedPreferences.edit();
                         editor.clear();
                         editor.apply();
@@ -246,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
     //返回上一层
     public void toHigherLevel() {
         sharedPreferences = getSharedPreferences(recordNow, Context.MODE_PRIVATE);
-        if(levelNow.equals(recordNow)) {
+        if (levelNow.equals(recordNow)) {
             allRecord();
             return;
         }
@@ -259,19 +235,145 @@ public class MainActivity extends AppCompatActivity {
     public void addDefaultFile() {
         sharedPreferences = getSharedPreferences("SpeciesRecord", Context.MODE_PRIVATE);
         String temp = sharedPreferences.getString("currentRecord", null);
-        if(temp == null) {
+        if (temp == null) {
             recordNow = "default by jeffrey";
             levelNow = recordNow;
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putString("currentRecord", recordNow);
             editor.putString("record_name_0", recordNow);
             editor.apply();
-            //未完成
+            String imgPath = getExternalFilesDir("").getAbsolutePath() + "/images";
+            File imgFile = new File(imgPath);
+            if (!imgFile.mkdirs()) {
+                return;
+            }
+            InputStream[] inputStreams = new InputStream[]{
+                    getResources().openRawResource(+R.drawable.default_1),
+                    getResources().openRawResource(+R.drawable.default_2),
+                    getResources().openRawResource(+R.drawable.default_3),
+                    getResources().openRawResource(+R.drawable.default_4),
+                    getResources().openRawResource(+R.drawable.default_5),
+                    getResources().openRawResource(+R.drawable.default_6),
+                    getResources().openRawResource(+R.drawable.default_7),
+                    getResources().openRawResource(+R.drawable.default_8),
+                    getResources().openRawResource(+R.drawable.default_9),
+                    getResources().openRawResource(+R.drawable.default_10),
+                    getResources().openRawResource(+R.drawable.default_11),
+                    getResources().openRawResource(+R.drawable.default_12),
+                    getResources().openRawResource(+R.drawable.default_13),
+                    getResources().openRawResource(+R.drawable.default_14),
+                    getResources().openRawResource(+R.drawable.default_15)
+            };
+            String[] names = new String[]{
+                    "明窗蛱蝶_1.jpg", "明窗蛱蝶_2.jpg", "明窗蛱蝶_3.jpg",
+                    "枯叶蛱蝶.jpg", "银豹蛱蝶.jpg", "拟斑脉蛱蝶.jpg",
+                    "柑橘凤蝶_1.jpg", "柑橘凤蝶_2.jpg", "绿带翠凤蝶_1.jpg",
+                    "绿带翠凤蝶_2.jpg", "东亚燕灰蝶_1.jpg", "东亚燕灰蝶_2.jpg",
+                    "亮灰蝶.jpg", "Y纹绢粉蝶.jpg", "西村绢粉蝶.jpg"
+            };
+            for (int i = 0; i < 15; i++) {
+                try {
+                    String LogoFilePath = imgPath + "/" + names[i];
+                    FileOutputStream fos = new FileOutputStream(LogoFilePath);
+                    byte[] buffer = new byte[8192];
+                    int count;
+                    while ((count = inputStreams[i].read(buffer)) > 0) {
+                        fos.write(buffer, 0, count);
+                    }
+                    fos.close();
+                    inputStreams[i].close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            sharedPreferences = getSharedPreferences("default by jeffrey", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor1 = sharedPreferences.edit();
+            editor1.putString("default by jeffrey_next_0", "蛱蝶科");
+            editor1.putString("default by jeffrey_next_1", "凤蝶科");
+            editor1.putString("default by jeffrey_next_2", "灰蝶科");
+            editor1.putString("default by jeffrey_next_3", "粉蝶科");
+            editor1.putInt("蛱蝶科", 4);
+            editor1.putInt("凤蝶科", 4);
+            editor1.putInt("灰蝶科", 4);
+            editor1.putInt("粉蝶科", 4);
+            editor1.putString("蛱蝶科_note", "前足退化");
+            editor1.putString("凤蝶科_note", "常具尾突");
+            editor1.putString("灰蝶科_note", "体型较小");
+            editor1.putString("粉蝶科_note", "色调较淡");
+            editor1.putString("蛱蝶科_previous", "default by jeffrey");
+            editor1.putString("凤蝶科_previous", "default by jeffrey");
+            editor1.putString("灰蝶科_previous", "default by jeffrey");
+            editor1.putString("粉蝶科_previous", "default by jeffrey");
+            editor1.putString("蛱蝶科_next_0", "明窗蛱蝶");
+            editor1.putString("蛱蝶科_next_1", "枯叶蛱蝶");
+            editor1.putString("蛱蝶科_next_2", "银豹蛱蝶");
+            editor1.putString("蛱蝶科_next_3", "拟斑脉蛱蝶");
+            editor1.putString("凤蝶科_next_0", "柑橘凤蝶");
+            editor1.putString("凤蝶科_next_1", "绿带翠凤蝶");
+            editor1.putString("灰蝶科_next_0", "东亚燕灰蝶");
+            editor1.putString("灰蝶科_next_1", "亮灰蝶");
+            editor1.putString("粉蝶科_next_0", "Y纹绢粉蝶");
+            editor1.putString("粉蝶科_next_1", "西村绢粉蝶");
+            editor1.putInt("明窗蛱蝶", 6);
+            editor1.putInt("枯叶蛱蝶", 6);
+            editor1.putInt("银豹蛱蝶", 6);
+            editor1.putInt("拟斑脉蛱蝶", 6);
+            editor1.putInt("柑橘凤蝶", 6);
+            editor1.putInt("绿带翠凤蝶", 6);
+            editor1.putInt("东亚燕灰蝶", 6);
+            editor1.putInt("亮灰蝶", 6);
+            editor1.putInt("Y纹绢粉蝶", 6);
+            editor1.putInt("西村绢粉蝶", 6);
+            editor1.putString("明窗蛱蝶_previous", "蛱蝶科");
+            editor1.putString("枯叶蛱蝶_previous", "蛱蝶科");
+            editor1.putString("银豹蛱蝶_previous", "蛱蝶科");
+            editor1.putString("拟斑脉蛱蝶_previous", "蛱蝶科");
+            editor1.putString("柑橘凤蝶_previous", "凤蝶科");
+            editor1.putString("绿带翠凤蝶_previous", "凤蝶科");
+            editor1.putString("东亚燕灰蝶_previous", "灰蝶科");
+            editor1.putString("亮灰蝶_previous", "灰蝶科");
+            editor1.putString("Y纹绢粉蝶_previous", "粉蝶科");
+            editor1.putString("西村绢粉蝶_previous", "粉蝶科");
+            String[] temp1 = new String[]{
+                    "明窗蛱蝶_image_0", "明窗蛱蝶_image_1", "明窗蛱蝶_image_2",
+                    "枯叶蛱蝶_image_0", "银豹蛱蝶_image_0", "拟斑脉蛱蝶_image_0",
+                    "柑橘凤蝶_image_0", "柑橘凤蝶_image_1", "绿带翠凤蝶_image_0",
+                    "绿带翠凤蝶_image_1", "东亚燕灰蝶_image_0", "东亚燕灰蝶_image_1",
+                    "亮灰蝶_image_0", "Y纹绢粉蝶_image_0", "西村绢粉蝶_image_0"
+            };
+            String[] temp2 = new String[]{
+                    "明窗蛱蝶_image_note_0", "明窗蛱蝶_image_note_1", "明窗蛱蝶_image_note_2",
+                    "枯叶蛱蝶_image_note_0", "银豹蛱蝶_image_note_0", "拟斑脉蛱蝶_image_note_0",
+                    "柑橘凤蝶_image_note_0", "柑橘凤蝶_image_note_1", "绿带翠凤蝶_image_note_0",
+                    "绿带翠凤蝶_image_note_1", "东亚燕灰蝶_image_note_0", "东亚燕灰蝶_image_note_1",
+                    "亮灰蝶_image_note_0", "Y纹绢粉蝶_image_note_0", "西村绢粉蝶_image_note_0"
+            };
+            String[] temp3 = new String[]{
+                    "生态照\n2021/4/14 天津蓟州\n为正在吸水的雄蝶",
+                    "2021/4/14\n天津蓟州\n海拔100m\n雄",
+                    "2021/5/6\n天津蓟州\n海拔100m\n雌",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "东北绿带",
+                    "南方型绿带",
+                    "生态照\n2021/5/6 天津蓟州",
+                    "2021/5/7\n天津蓟州\n海拔100m\n雄",
+                    "",
+                    "2020/6/24\n四川\n海拔1800m\n雄",
+                    "2020/6/24\n四川\n海拔2000m\n雄",
+            };
+            for (int i = 0; i < 15; i++) {
+                editor1.putString(temp1[i], imgPath + "/" + names[i]);
+                editor1.putString(temp2[i], temp3[i]);
+            }
+            editor1.apply();
         } else {
             recordNow = temp;
             levelNow = temp;
         }
-//        未完成
     }
 
     //数据初始化 recordNames
@@ -281,14 +383,15 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences("SpeciesRecord", Context.MODE_PRIVATE);
         int i = 0;
         String temp1 = sharedPreferences.getString("record_name_" + i, null);
-        while(temp1 != null) {
+        while (temp1 != null) {
             this.recordNames.add(temp1);
             i++;
-            temp1 = sharedPreferences.getString( "record_name_" + i, null);
+            temp1 = sharedPreferences.getString("record_name_" + i, null);
         }
     }
 
     //加载每个层次名
+    //ok
     public void loadList() {
         Objects.requireNonNull(getSupportActionBar()).setTitle(levelNow);
         ArrayList<String> imagePaths = new ArrayList<>();
@@ -298,7 +401,7 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences(recordNow, Context.MODE_PRIVATE);
         int i = 0;
         String temp;
-        if(sharedPreferences.getInt(levelNow, -1) == 6) {
+        if (sharedPreferences.getInt(levelNow, -1) == 6) {
             temp = sharedPreferences.getString(levelNow + "_image_" + i, null);
             while (temp != null) {
                 imagePaths.add(temp);
@@ -321,6 +424,8 @@ public class MainActivity extends AppCompatActivity {
             PhotoAdapter photoAdapter = new PhotoAdapter(MainActivity.this, R.layout.photo_list, photos);
             ListView listView = findViewById(R.id.list_view);
             listView.setAdapter(photoAdapter);
+            listView.setOnItemClickListener((parent, view, position, id) -> {
+            });
             return;
         }
         ArrayList<Level> levels = Level.getLevels(tempNames, tempNotes);
