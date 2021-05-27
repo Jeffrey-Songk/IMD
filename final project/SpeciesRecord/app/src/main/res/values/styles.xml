@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <style name="ToolbarMenuTheme">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="popupMenuBackground">@drawable/background1</item>
+    </style>
 
     <style name="level_description">
         <item name="android:textStyle">bold</item>
@@ -7,7 +12,8 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginStart">16dp</item>
         <item name="android:layout_marginLeft">16dp</item>
-        <item name="android:layout_marginTop">24dp</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:layout_marginBottom">4dp</item>
         <item name="android:textSize">30sp</item>
     </style>
 
@@ -16,7 +22,8 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginStart">16dp</item>
         <item name="android:layout_marginLeft">16dp</item>
-        <item name="android:layout_marginTop">24dp</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:layout_marginBottom">4dp</item>
         <item name="android:layout_marginEnd">16dp</item>
         <item name="android:layout_marginRight">16dp</item>
         <item name="android:ems">10</item>
@@ -29,7 +36,7 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_marginStart">16dp</item>
         <item name="android:layout_marginLeft">16dp</item>
-        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:layout_marginBottom">4dp</item>
         <item name="android:layout_marginEnd">16dp</item>
         <item name="android:layout_marginRight">16dp</item>
         <item name="android:ems">10</item>

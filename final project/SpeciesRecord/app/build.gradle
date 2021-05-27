@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.speciesrecord"
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
@@ -39,9 +39,6 @@ dependencies {
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-
-    implementation 'com.leon:lfilepickerlibrary:1.8.0'
-
     implementation 'androidx.recyclerview:recyclerview:1.0.0'
     implementation 'xerces:xercesImpl:2.11.0'
 }

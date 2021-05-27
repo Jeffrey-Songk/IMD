@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/level_list"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -11,9 +12,10 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8sp"
         android:layout_marginLeft="8sp"
-        android:layout_marginTop="4sp"
+        android:layout_marginTop="8sp"
         android:layout_marginEnd="8sp"
         android:layout_marginRight="8sp"
+        android:layout_marginBottom="8sp"
         android:textSize="25sp"
         android:textStyle="bold" />
 
@@ -25,5 +27,6 @@
         android:layout_marginLeft="16sp"
         android:layout_marginEnd="16sp"
         android:layout_marginRight="16sp"
+        android:layout_marginBottom="12sp"
         android:textSize="18sp" />
 </LinearLayout>

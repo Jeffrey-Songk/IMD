@@ -3,12 +3,39 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/scroll_view"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/background2"
     tools:context=".NewSpecies">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:fitsSystemWindows="true"
+            android:background="@drawable/background1"
+            android:theme="@style/Theme.SpeciesRecord.AppBarOverlay">
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/new_toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@drawable/background1"
+                app:titleTextColor="@color/white"
+                app:title="New Species"/>
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/border1">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -22,7 +49,8 @@
             <EditText
                 android:id="@+id/kingdom_name"
                 android:hint="@string/optional"
-                style="@style/level_name" />
+                style="@style/level_name"
+                android:autofillHints="" />
         </LinearLayout>
 
 
@@ -30,8 +58,15 @@
             android:visibility="gone"
             android:id="@+id/kingdom_note"
             android:hint="@string/optional_note"
-            style="@style/Level_note" />
+            style="@style/Level_note"
+            android:autofillHints="" />
 
+        </LinearLayout>
+        <LinearLayout
+            android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/border1">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -44,7 +79,8 @@
             <EditText
                 android:id="@+id/phylum_name"
                 style="@style/level_name"
-                android:hint="@string/optional" />
+                android:hint="@string/optional"
+                android:autofillHints="" />
         </LinearLayout>
 
 
@@ -52,8 +88,14 @@
             android:visibility="gone"
             android:id="@+id/phylum_note"
             android:hint="@string/optional_note"
-            style="@style/Level_note" />
-
+            style="@style/Level_note"
+            android:autofillHints="" />
+        </LinearLayout>
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/border1">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -66,7 +108,8 @@
             <EditText
                 android:id="@+id/class_name"
                 style="@style/level_name"
-                android:hint="@string/optional" />
+                android:hint="@string/optional"
+                android:autofillHints="" />
         </LinearLayout>
 
 
@@ -74,8 +117,16 @@
             android:visibility="gone"
             android:id="@+id/class_note"
             android:hint="@string/optional_note"
-            style="@style/Level_note" />
+            style="@style/Level_note"
+            android:autofillHints="" />
 
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/border1">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -88,7 +139,8 @@
             <EditText
                 android:id="@+id/order_name"
                 style="@style/level_name"
-                android:hint="@string/optional" />
+                android:hint="@string/optional"
+                android:autofillHints="" />
         </LinearLayout>
 
 
@@ -96,8 +148,14 @@
             android:visibility="gone"
             android:id="@+id/order_note"
             android:hint="@string/optional_note"
-            style="@style/Level_note" />
-
+            style="@style/Level_note"
+            android:autofillHints="" />
+    </LinearLayout>
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/border1">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -110,7 +168,8 @@
             <EditText
                 android:id="@+id/family_name"
                 style="@style/level_name"
-                android:hint="@string/optional" />
+                android:hint="@string/optional"
+                android:autofillHints="" />
         </LinearLayout>
 
 
@@ -118,8 +177,16 @@
             android:visibility="gone"
             android:id="@+id/family_note"
             android:hint="@string/optional_note"
-            style="@style/Level_note" />
+            style="@style/Level_note"
+            android:autofillHints="" />
 
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/border1">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -132,7 +199,8 @@
             <EditText
                 android:id="@+id/genus_name"
                 style="@style/level_name"
-                android:hint="@string/optional" />
+                android:hint="@string/optional"
+                android:autofillHints="" />
         </LinearLayout>
 
 
@@ -140,8 +208,15 @@
             android:visibility="gone"
             android:id="@+id/genus_note"
             android:hint="@string/optional_note"
-            style="@style/Level_note" />
+            style="@style/Level_note"
+            android:autofillHints="" />
 
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/border1">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -156,12 +231,8 @@
                 style="@style/level_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginLeft="16dp"
-                android:layout_marginTop="24dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginRight="16dp"
-                android:hint="@string/optional" />
+                android:hint="@string/optional"
+                android:autofillHints="" />
         </LinearLayout>
 
         <LinearLayout
@@ -177,12 +248,13 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginLeft="16dp"
-                android:layout_marginTop="8dp"
                 android:layout_marginEnd="16dp"
                 android:layout_marginRight="16dp"
                 android:hint="@string/optional_note"
                 android:inputType="textLongMessage|textMultiLine"
-                android:textSize="25sp" />
+                android:textSize="25sp"
+                android:autofillHints=""
+                />
 
             <Button
                 android:id="@+id/add_photo"
@@ -192,10 +264,12 @@
                 android:layout_marginLeft="96dp"
                 android:layout_marginEnd="96dp"
                 android:layout_marginRight="96dp"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="#70E990"
                 android:onClick="addPhotos"
                 android:text="@string/add_photos_button" />
         </LinearLayout>
-
+    </LinearLayout>
         <Button
             android:id="@+id/btn_add_confirm"
             android:layout_width="match_parent"
@@ -206,6 +280,7 @@
             android:layout_marginEnd="16dp"
             android:layout_marginRight="16dp"
             android:layout_marginBottom="24dp"
+            android:backgroundTint="#70E990"
             android:onClick="addConfirm"
             android:text="@string/add_confirm" />
     </LinearLayout>
