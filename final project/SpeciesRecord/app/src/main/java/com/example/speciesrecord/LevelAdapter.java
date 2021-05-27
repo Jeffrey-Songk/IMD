@@ -23,12 +23,16 @@ public class LevelAdapter extends ArrayAdapter<Level> {
             TextView levelListNote = view.findViewById(R.id.level_list_note);
             levelListName.setText(level.getName());
             levelListNote.setText(level.getNote());
+            if(level.getNote() == null)
+                levelListNote.setVisibility(View.GONE);
             return view;
         }
         TextView levelListName = convertView.findViewById(R.id.level_list_name);
         TextView levelListNote = convertView.findViewById(R.id.level_list_note);
         levelListName.setText(level.getName());
         levelListNote.setText(level.getNote());
+        if(level.getNote() == null)
+            levelListNote.setVisibility(View.GONE);
         return convertView;
     }
 }

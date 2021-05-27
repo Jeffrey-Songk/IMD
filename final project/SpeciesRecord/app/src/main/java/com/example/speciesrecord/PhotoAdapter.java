@@ -26,12 +26,16 @@ public class PhotoAdapter extends ArrayAdapter<Photo> {
             TextView imageListNote = view.findViewById(R.id.photo_list_note);
             imageView.setImageURI(Uri.fromFile(new File(photo.getPath())));
             imageListNote.setText(photo.getNote());
+            if(photo.getNote() == null)
+                imageListNote.setVisibility(View.GONE);
             return view;
         }
         ImageView imageView = convertView.findViewById(R.id.photo_list_photo);
         TextView imageListNote = convertView.findViewById(R.id.photo_list_note);
         imageView.setImageURI(Uri.fromFile(new File(photo.getPath())));
         imageListNote.setText(photo.getNote());
+        if(photo.getNote() == null)
+            imageListNote.setVisibility(View.GONE);
         return convertView;
     }
 }

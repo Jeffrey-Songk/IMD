@@ -21,9 +21,11 @@
             android:importantForAutofill="no"
             android:inputType="text" />
     </LinearLayout>
+
     <Button
+        android:id="@+id/btn_confirm_new"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/confirm"
-        android:id="@+id/btn_confirm_new"/>
+        android:backgroundTint="#70E990"
+        android:text="@string/confirm" />
 </LinearLayout>

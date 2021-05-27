@@ -1,10 +1,11 @@
 package com.example.speciesrecord;
 
-import android.content.ClipData;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.appcompat.app.AlertDialog;
@@ -14,6 +15,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -21,12 +23,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     protected static String levelNow;
     protected static String recordNow;
-    private boolean photoMode = false;
     private ArrayList<String> recordNames;
     protected static SharedPreferences sharedPreferences;
 
@@ -39,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void init() {
+
         FileOperation.verifyStoragePermissions(this);//申请读写权限
         addDefaultFile();//配置默认记录
         setPage();//绑定初始化toolbar和FAB
@@ -49,13 +52,15 @@ public class MainActivity extends AppCompatActivity {
     //绑定初始化toolbar和FAB
     //ok
     public void setPage() {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
         Toolbar toolbar = findViewById(R.id.record_toolbar);
         setSupportActionBar(toolbar);
         Objects.requireNonNull(getSupportActionBar()).setHomeButtonEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         FloatingActionButton add_fab = findViewById(R.id.add_fab);
         add_fab.setOnClickListener(view -> {
-            if (recordNow.equals("default by jeffrey")) {
+            if (recordNow.equals("Initial Record by Jeffrey")) {
                 new AlertDialog.Builder(this)
                         .setMessage("不得更改0.0")
                         .setPositiveButton("确定", (dialog, which) -> {
@@ -88,10 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.show_images) {
-            showImages(item);
-            return true;
-        } else if (item.getItemId() == R.id.all_record) {
+        if (item.getItemId() == R.id.all_record) {
             allRecord();
             return true;
         } else if (item.getItemId() == R.id.new_record) {
@@ -108,15 +110,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    //跳转到图片页面， 未写
-    public void showImages(MenuItem item) {
-        if(item.getTitle().toString().equals("图片模式")) {
-            item.setTitle("初始页面");
-            return;
-        }
-        item.setTitle("图片模式");
-    }
-
     //查看所有记录，并可跳转
     public void allRecord() {
         String[] records = TypeConversion.arrayListToStrings(this.recordNames);
@@ -127,10 +120,15 @@ public class MainActivity extends AppCompatActivity {
                     //跳转到对应记录
                     recordNow = records[which];
                     levelNow = recordNow;
-                    sharedPreferences = getSharedPreferences("SpeciesRecord", Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putString("currentRecord", recordNow);
-                    editor.apply();
+                    SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                            getExternalFilesDir("").getAbsolutePath()
+                                    + "/databases/SpeciesRecord.db", null);
+                    ContentValues contentValues = new ContentValues();
+                    contentValues.put("is_now", 0);
+                    db.update("records", contentValues, "is_now = 1", null);
+                    contentValues = new ContentValues();
+                    contentValues.put("is_now", 1);
+                    db.update("records", contentValues, "record = ?", new String[]{recordNow});
                     loadList();
                 })
                 .create().show();
@@ -151,40 +149,42 @@ public class MainActivity extends AppCompatActivity {
         btn.setOnClickListener(v -> {
             //初始化相应文件，跳转到新页面
             String newName = editText.getText().toString();
-            sharedPreferences = getSharedPreferences("SpeciesRecord", Context.MODE_PRIVATE);
-            int i = 0;
-            boolean isExist = false;
-            String temp = sharedPreferences.getString("record_name_" + i, null);
-            while (temp != null) {
-                if (temp.equals(newName)) {
-                    new AlertDialog.Builder(this)
-                            .setMessage("该名称记录已存在")
-                            .setPositiveButton("确定", (dialog, which) -> {
-                            })
-                            .create().show();
-                    isExist = true;
-                    break;
-                }
-                i++;
-                temp = sharedPreferences.getString("record_name_" + i, null);
-            }
-            if (!isExist) {
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("record_name_" + i, newName);
-                editor.putString("currentRecord", newName);
-                editor.apply();
+            SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                    getExternalFilesDir("").getAbsolutePath()
+                            + "/databases/SpeciesRecord.db", null);
+            Cursor cursor = db.rawQuery("select record from records where record = ?", new String[]{newName});
+            if(cursor.getCount() > 0) {
+                new AlertDialog.Builder(this)
+                        .setMessage("该名称记录已存在")
+                        .setPositiveButton("确定", (dialog, which) -> {
+                        })
+                        .create().show();
+            } else {
+                SQLiteDatabase db1 = SQLiteDatabase.openOrCreateDatabase(
+                        getExternalFilesDir("").getAbsolutePath()
+                                + "/databases/" + newName + ".db", null);
+                String SQL = "create table levels(name varchar(30), level integer, note varchar(127), previous varchar(30))";
+                db1.execSQL(SQL);
+                ContentValues contentValues = new ContentValues();
+                contentValues.put("is_now", 0);
+                db.update("records", contentValues, "is_now = 1", null);
+                contentValues = new ContentValues();
+                contentValues.put("record", newName);
+                contentValues.put("is_now", 1);
+                db.insert("records", null, contentValues);
                 recordNow = newName;
                 levelNow = newName;
                 alertDialog.cancel();
                 dataInit();
                 loadList();
             }
+            cursor.close();
         });
     }
 
     //删除
     public void deleteThis() {
-        if (recordNow.equals("default by jeffrey")) {
+        if (recordNow.equals("Initial Record by Jeffrey")) {
             new AlertDialog.Builder(this)
                     .setMessage("这个是删不掉的(别硬删，app直接就崩了0~0)")
                     .setPositiveButton("确定", (dialog, which) -> {
@@ -195,21 +195,35 @@ public class MainActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setMessage("你确定要删除此分类及其下所有的记录吗")
                 .setPositiveButton("确定", ((dialog, which) -> {
-                    sharedPreferences = getSharedPreferences(recordNow, Context.MODE_PRIVATE);
-                    if (recordNow.equals(levelNow)) {
-                        SharedPreferences.Editor editor = sharedPreferences.edit();
-                        editor.clear();
-                        editor.apply();
-                        sharedPreferences = getSharedPreferences("SpeciesRecord", Context.MODE_PRIVATE);
-                        int temp = SharedPreferencesOperation.find("record_name_", levelNow);
-                        SharedPreferencesOperation.delete("record_name_", temp);
-                        recordNow = "default by jeffrey";
-                        levelNow = recordNow;
+                    SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                            getExternalFilesDir("").getAbsolutePath()
+                                    + "/databases/SpeciesRecord.db", null);
+                    if(recordNow.equals(levelNow)) {
+                        File file = new File(getExternalFilesDir("").getAbsolutePath() + "/databases/" + recordNow + ".db");
+                        if(!file.delete()) {
+                            System.out.println("fail");
+                            return;
+                        }
+                        db.delete("records", "record = ?", new String[]{recordNow});
+                        ContentValues contentValues = new ContentValues();
+                        contentValues.put("is_now", 1);
+                        db.update("records", contentValues, "record = ?", new String[]{"Initial Record by Jeffrey"});
+                        levelNow = "Initial Record by Jeffrey";
+                        recordNow = levelNow;
                     } else {
-                        //递归删除，未完成
-                        String temp = sharedPreferences.getString(levelNow + "_previous", null);
-                        SharedPreferencesOperation.deleteLevel(levelNow);
-                        levelNow = temp;
+//                        //递归删除，未完成
+//                        String temp = sharedPreferences.getString(levelNow + "_previous", null);
+//                        SharedPreferencesOperation.deleteLevel(levelNow);
+//                        levelNow = temp;
+                        db = SQLiteDatabase.openOrCreateDatabase(
+                                getExternalFilesDir("").getAbsolutePath()
+                                        + "/databases/" + recordNow + ".db", null);
+                        Cursor cursor = db.rawQuery("select previous from levels where name = ?", new String[]{levelNow});
+                        cursor.moveToFirst();
+                        levelNow = cursor.getString(0);
+                        cursor.close();
+                        DatabaseOperation.deleteLevel(db, levelNow);
+
                     }
                     dataInit();
                     loadList();
@@ -221,32 +235,50 @@ public class MainActivity extends AppCompatActivity {
 
     //返回上一层
     public void toHigherLevel() {
-        sharedPreferences = getSharedPreferences(recordNow, Context.MODE_PRIVATE);
         if (levelNow.equals(recordNow)) {
             allRecord();
             return;
         }
-        levelNow = sharedPreferences.getString(levelNow + "_previous", levelNow);
+        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                getExternalFilesDir("").getAbsolutePath()
+                        + "/databases/" + recordNow + ".db", null);
+        Cursor cursor = db.rawQuery("select previous from levels where name = ?", new String[]{levelNow});
+        cursor.moveToFirst();
+        levelNow = cursor.getString(0);
+        cursor.close();
         loadList();
     }
 
     //配置默认记录，及配置
     //ok
     public void addDefaultFile() {
-        sharedPreferences = getSharedPreferences("SpeciesRecord", Context.MODE_PRIVATE);
-        String temp = sharedPreferences.getString("currentRecord", null);
-        if (temp == null) {
-            recordNow = "default by jeffrey";
-            levelNow = recordNow;
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString("currentRecord", recordNow);
-            editor.putString("record_name_0", recordNow);
-            editor.apply();
+        File databaseFile = new File(getExternalFilesDir("").getAbsolutePath() + "/databases");
+        if(databaseFile.mkdirs()) {
+            SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                    getExternalFilesDir("").getAbsolutePath()
+                            + "/databases/SpeciesRecord.db", null);
+            String SQL = "create table records(record varchar(30), is_now boolean)";
+            db.execSQL(SQL);
+            SQL = "insert into records(record, is_now) values('Initial Record by Jeffrey', 1)";
+            db.execSQL(SQL);
+            recordNow = "Initial Record by Jeffrey";
+            levelNow = "Initial Record by Jeffrey";
             String imgPath = getExternalFilesDir("").getAbsolutePath() + "/images";
             File imgFile = new File(imgPath);
             if (!imgFile.mkdirs()) {
                 return;
             }
+            db = SQLiteDatabase.openOrCreateDatabase(
+                    getExternalFilesDir("").getAbsolutePath()
+                            + "/databases/Initial Record by Jeffrey.db", null);
+            SQL = "create table levels(name varchar(30), level integer, note varchar(127), previous varchar(30))";
+            db.execSQL(SQL);
+
+            DatabaseOperation.insertToLevel(db, "蛱蝶科", 4, "前足退化", "Initial Record by Jeffrey");
+            DatabaseOperation.insertToLevel(db, "凤蝶科", 4, "常具尾突", "Initial Record by Jeffrey");
+            DatabaseOperation.insertToLevel(db, "灰蝶科", 4, "体型较小", "Initial Record by Jeffrey");
+            DatabaseOperation.insertToLevel(db, "粉蝶科", 4, "色调较淡", "Initial Record by Jeffrey");
+
             InputStream[] inputStreams = new InputStream[]{
                     getResources().openRawResource(+R.drawable.default_1),
                     getResources().openRawResource(+R.drawable.default_2),
@@ -286,93 +318,50 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
-            sharedPreferences = getSharedPreferences("default by jeffrey", Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor1 = sharedPreferences.edit();
-            editor1.putString("default by jeffrey_next_0", "蛱蝶科");
-            editor1.putString("default by jeffrey_next_1", "凤蝶科");
-            editor1.putString("default by jeffrey_next_2", "灰蝶科");
-            editor1.putString("default by jeffrey_next_3", "粉蝶科");
-            editor1.putInt("蛱蝶科", 4);
-            editor1.putInt("凤蝶科", 4);
-            editor1.putInt("灰蝶科", 4);
-            editor1.putInt("粉蝶科", 4);
-            editor1.putString("蛱蝶科_note", "前足退化");
-            editor1.putString("凤蝶科_note", "常具尾突");
-            editor1.putString("灰蝶科_note", "体型较小");
-            editor1.putString("粉蝶科_note", "色调较淡");
-            editor1.putString("蛱蝶科_previous", "default by jeffrey");
-            editor1.putString("凤蝶科_previous", "default by jeffrey");
-            editor1.putString("灰蝶科_previous", "default by jeffrey");
-            editor1.putString("粉蝶科_previous", "default by jeffrey");
-            editor1.putString("蛱蝶科_next_0", "明窗蛱蝶");
-            editor1.putString("蛱蝶科_next_1", "枯叶蛱蝶");
-            editor1.putString("蛱蝶科_next_2", "银豹蛱蝶");
-            editor1.putString("蛱蝶科_next_3", "拟斑脉蛱蝶");
-            editor1.putString("凤蝶科_next_0", "柑橘凤蝶");
-            editor1.putString("凤蝶科_next_1", "绿带翠凤蝶");
-            editor1.putString("灰蝶科_next_0", "东亚燕灰蝶");
-            editor1.putString("灰蝶科_next_1", "亮灰蝶");
-            editor1.putString("粉蝶科_next_0", "Y纹绢粉蝶");
-            editor1.putString("粉蝶科_next_1", "西村绢粉蝶");
-            editor1.putInt("明窗蛱蝶", 6);
-            editor1.putInt("枯叶蛱蝶", 6);
-            editor1.putInt("银豹蛱蝶", 6);
-            editor1.putInt("拟斑脉蛱蝶", 6);
-            editor1.putInt("柑橘凤蝶", 6);
-            editor1.putInt("绿带翠凤蝶", 6);
-            editor1.putInt("东亚燕灰蝶", 6);
-            editor1.putInt("亮灰蝶", 6);
-            editor1.putInt("Y纹绢粉蝶", 6);
-            editor1.putInt("西村绢粉蝶", 6);
-            editor1.putString("明窗蛱蝶_previous", "蛱蝶科");
-            editor1.putString("枯叶蛱蝶_previous", "蛱蝶科");
-            editor1.putString("银豹蛱蝶_previous", "蛱蝶科");
-            editor1.putString("拟斑脉蛱蝶_previous", "蛱蝶科");
-            editor1.putString("柑橘凤蝶_previous", "凤蝶科");
-            editor1.putString("绿带翠凤蝶_previous", "凤蝶科");
-            editor1.putString("东亚燕灰蝶_previous", "灰蝶科");
-            editor1.putString("亮灰蝶_previous", "灰蝶科");
-            editor1.putString("Y纹绢粉蝶_previous", "粉蝶科");
-            editor1.putString("西村绢粉蝶_previous", "粉蝶科");
-            String[] temp1 = new String[]{
-                    "明窗蛱蝶_image_0", "明窗蛱蝶_image_1", "明窗蛱蝶_image_2",
-                    "枯叶蛱蝶_image_0", "银豹蛱蝶_image_0", "拟斑脉蛱蝶_image_0",
-                    "柑橘凤蝶_image_0", "柑橘凤蝶_image_1", "绿带翠凤蝶_image_0",
-                    "绿带翠凤蝶_image_1", "东亚燕灰蝶_image_0", "东亚燕灰蝶_image_1",
-                    "亮灰蝶_image_0", "Y纹绢粉蝶_image_0", "西村绢粉蝶_image_0"
-            };
-            String[] temp2 = new String[]{
-                    "明窗蛱蝶_image_note_0", "明窗蛱蝶_image_note_1", "明窗蛱蝶_image_note_2",
-                    "枯叶蛱蝶_image_note_0", "银豹蛱蝶_image_note_0", "拟斑脉蛱蝶_image_note_0",
-                    "柑橘凤蝶_image_note_0", "柑橘凤蝶_image_note_1", "绿带翠凤蝶_image_note_0",
-                    "绿带翠凤蝶_image_note_1", "东亚燕灰蝶_image_note_0", "东亚燕灰蝶_image_note_1",
-                    "亮灰蝶_image_note_0", "Y纹绢粉蝶_image_note_0", "西村绢粉蝶_image_note_0"
-            };
-            String[] temp3 = new String[]{
-                    "生态照\n2021/4/14 天津蓟州\n为正在吸水的雄蝶",
-                    "2021/4/14\n天津蓟州\n海拔100m\n雄",
-                    "2021/5/6\n天津蓟州\n海拔100m\n雌",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    "东北绿带",
-                    "南方型绿带",
-                    "生态照\n2021/5/6 天津蓟州",
-                    "2021/5/7\n天津蓟州\n海拔100m\n雄",
-                    "",
-                    "2020/6/24\n四川\n海拔1800m\n雄",
-                    "2020/6/24\n四川\n海拔2000m\n雄",
-            };
-            for (int i = 0; i < 15; i++) {
-                editor1.putString(temp1[i], imgPath + "/" + names[i]);
-                editor1.putString(temp2[i], temp3[i]);
-            }
-            editor1.apply();
+            DatabaseOperation.insertToLevel(db, "明窗蛱蝶", 6, "一年一季，出现在春天", "蛱蝶科");
+            DatabaseOperation.insertToLevel(db, "枯叶蛱蝶", 6, "", "蛱蝶科");
+            DatabaseOperation.insertToLevel(db, "银豹蛱蝶", 6, "", "蛱蝶科");
+            DatabaseOperation.insertToLevel(db, "拟斑脉蛱蝶", 6, "", "蛱蝶科");
+            DatabaseOperation.insertToLevel(db, "柑橘凤蝶", 6, "广布的凤蝶", "凤蝶科");
+            DatabaseOperation.insertToLevel(db, "绿带翠凤蝶", 6, "", "凤蝶科");
+            DatabaseOperation.insertToLevel(db, "东亚燕灰蝶", 6, "", "灰蝶科");
+            DatabaseOperation.insertToLevel(db, "亮灰蝶", 6, "", "灰蝶科");
+            DatabaseOperation.insertToLevel(db, "Y纹绢粉蝶", 6, "高海拔绢粉蝶", "粉蝶科");
+            DatabaseOperation.insertToLevel(db, "西村绢粉蝶", 6, "高海拔绢粉蝶", "粉蝶科");
+            DatabaseOperation.createSpeciesImagesTable(db, "明窗蛱蝶");
+            DatabaseOperation.createSpeciesImagesTable(db, "枯叶蛱蝶");
+            DatabaseOperation.createSpeciesImagesTable(db, "银豹蛱蝶");
+            DatabaseOperation.createSpeciesImagesTable(db, "拟斑脉蛱蝶");
+            DatabaseOperation.createSpeciesImagesTable(db, "柑橘凤蝶");
+            DatabaseOperation.createSpeciesImagesTable(db, "绿带翠凤蝶");
+            DatabaseOperation.createSpeciesImagesTable(db, "东亚燕灰蝶");
+            DatabaseOperation.createSpeciesImagesTable(db, "亮灰蝶");
+            DatabaseOperation.createSpeciesImagesTable(db, "Y纹绢粉蝶");
+            DatabaseOperation.createSpeciesImagesTable(db, "西村绢粉蝶");
+            DatabaseOperation.insertImagetoTable(db, "明窗蛱蝶", imgPath + "/" + names[0], "生态照");
+            DatabaseOperation.insertImagetoTable(db, "明窗蛱蝶", imgPath + "/" + names[1], "雄");
+            DatabaseOperation.insertImagetoTable(db, "明窗蛱蝶", imgPath + "/" + names[2], "雌");
+            DatabaseOperation.insertImagetoTable(db, "枯叶蛱蝶", imgPath + "/" + names[3], "");
+            DatabaseOperation.insertImagetoTable(db, "银豹蛱蝶", imgPath + "/" + names[4], "");
+            DatabaseOperation.insertImagetoTable(db, "拟斑脉蛱蝶", imgPath + "/" + names[5], "");
+            DatabaseOperation.insertImagetoTable(db, "柑橘凤蝶", imgPath + "/" + names[6], "");
+            DatabaseOperation.insertImagetoTable(db, "柑橘凤蝶", imgPath + "/" + names[7], "");
+            DatabaseOperation.insertImagetoTable(db, "绿带翠凤蝶", imgPath + "/" + names[8], "东北绿带翠");
+            DatabaseOperation.insertImagetoTable(db, "绿带翠凤蝶", imgPath + "/" + names[9], "南方型绿带翠");
+            DatabaseOperation.insertImagetoTable(db, "东亚燕灰蝶", imgPath + "/" + names[10], "");
+            DatabaseOperation.insertImagetoTable(db, "东亚燕灰蝶", imgPath + "/" + names[11], "");
+            DatabaseOperation.insertImagetoTable(db, "亮灰蝶", imgPath + "/" + names[12], "");
+            DatabaseOperation.insertImagetoTable(db, "Y纹绢粉蝶", imgPath + "/" + names[13], "");
+            DatabaseOperation.insertImagetoTable(db, "西村绢粉蝶", imgPath + "/" + names[14], "");
         } else {
-            recordNow = temp;
-            levelNow = temp;
+            SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                    getExternalFilesDir("").getAbsolutePath()
+                            + "/databases/SpeciesRecord.db", null);
+            Cursor cursor = db.rawQuery("select record from records where is_now = 1", null);
+            cursor.moveToFirst();
+            recordNow = cursor.getString(0);
+            levelNow = recordNow;
+            cursor.close();
         }
     }
 
@@ -380,14 +369,16 @@ public class MainActivity extends AppCompatActivity {
     //ok
     public void dataInit() {
         this.recordNames = new ArrayList<>();
-        sharedPreferences = getSharedPreferences("SpeciesRecord", Context.MODE_PRIVATE);
-        int i = 0;
-        String temp1 = sharedPreferences.getString("record_name_" + i, null);
-        while (temp1 != null) {
-            this.recordNames.add(temp1);
-            i++;
-            temp1 = sharedPreferences.getString("record_name_" + i, null);
+        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                getExternalFilesDir("").getAbsolutePath()
+                        + "/databases/SpeciesRecord.db", null);
+        Cursor cursor = db.rawQuery("select record from records", null);
+        cursor.moveToFirst();
+        this.recordNames.add(cursor.getString(0));
+        while(cursor.moveToNext()) {
+            this.recordNames.add(cursor.getString(0));
         }
+        cursor.close();
     }
 
     //加载每个层次名
@@ -398,36 +389,56 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<String> imageNotes = new ArrayList<>();
         ArrayList<String> tempNames = new ArrayList<>();
         ArrayList<String> tempNotes = new ArrayList<>();
-        sharedPreferences = getSharedPreferences(recordNow, Context.MODE_PRIVATE);
-        int i = 0;
-        String temp;
-        if (sharedPreferences.getInt(levelNow, -1) == 6) {
-            temp = sharedPreferences.getString(levelNow + "_image_" + i, null);
-            while (temp != null) {
-                imagePaths.add(temp);
-                imageNotes.add(sharedPreferences.getString(levelNow + "_image_note_" + i, null));
-                i++;
-                temp = sharedPreferences.getString(levelNow + "_image_" + i, null);
-            }
-        } else {
-            temp = sharedPreferences.getString(levelNow + "_next_" + i, null);
-            while (temp != null) {
-                tempNames.add(temp);
-                tempNotes.add(sharedPreferences.getString(temp + "_note", null));
-                i++;
-                temp = sharedPreferences.getString(levelNow + "_next_" + i, null);
-            }
-        }
 
-        if (imagePaths.size() > 0) {
-            ArrayList<Photo> photos = Photo.getPhotos(imagePaths, imageNotes);
-            PhotoAdapter photoAdapter = new PhotoAdapter(MainActivity.this, R.layout.photo_list, photos);
-            ListView listView = findViewById(R.id.list_view);
-            listView.setAdapter(photoAdapter);
-            listView.setOnItemClickListener((parent, view, position, id) -> {
-            });
-            return;
+        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                getExternalFilesDir("").getAbsolutePath()
+                        + "/databases/" + recordNow + ".db", null);
+        Cursor cursor = db.rawQuery("select level from levels where name = ?", new String[]{levelNow});
+        if(cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            if(cursor.getInt(0) == 6) {
+                Cursor cursor1 = db.rawQuery("select * from " + levelNow, null);
+                if(cursor1.getCount() > 0) {
+                    cursor1.moveToFirst();
+                    imagePaths.add(cursor1.getString(0));
+                    if(cursor1.getString(1).equals(""))
+                        imageNotes.add(null);
+                    else
+                        imageNotes.add(cursor1.getString(1));
+                    while (cursor1.moveToNext()) {
+                        imagePaths.add(cursor1.getString(0));
+                        if(cursor1.getString(1).equals(""))
+                            imageNotes.add(null);
+                        else
+                            imageNotes.add(cursor1.getString(1));
+                    }
+                }
+                cursor1.close();
+                ArrayList<Photo> photos = Photo.getPhotos(imagePaths, imageNotes);
+                PhotoAdapter photoAdapter = new PhotoAdapter(MainActivity.this, R.layout.photo_list, photos);
+                ListView listView = findViewById(R.id.list_view);
+                listView.setAdapter(photoAdapter);
+                return;
+            }
         }
+        cursor.close();
+        cursor = db.rawQuery("select name, note from levels where previous = ?", new String[]{levelNow});
+        if(cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            tempNames.add(cursor.getString(0));
+            if(cursor.getString(1).equals(""))
+                tempNotes.add(null);
+            else
+                tempNotes.add(cursor.getString(1));
+            while (cursor.moveToNext()) {
+                tempNames.add(cursor.getString(0));
+                if(cursor.getString(1).equals(""))
+                    tempNotes.add(null);
+                else
+                    tempNotes.add(cursor.getString(1));
+            }
+        }
+        cursor.close();
         ArrayList<Level> levels = Level.getLevels(tempNames, tempNotes);
         LevelAdapter levelAdapter = new LevelAdapter(MainActivity.this, R.layout.level_list, levels);
         ListView listView = findViewById(R.id.list_view);

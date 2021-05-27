@@ -11,4 +11,17 @@ public class TypeConversion {
         }
         return strings;
     }
+
+    public static String stringsToString(String[] strings, String split) {
+        if(strings != null) {
+            StringBuilder stringBuilder = new StringBuilder();
+            for(int i = 0; i < strings.length; i++) {
+                stringBuilder.append(strings[i]);
+                if(i < strings.length - 1)
+                    stringBuilder.append(split);
+            }
+            return stringBuilder.toString();
+        }
+        return null;
+    }
 }

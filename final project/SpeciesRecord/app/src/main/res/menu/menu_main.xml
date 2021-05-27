@@ -2,10 +2,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.example.speciesrecord.MainActivity">
-    <item
-        android:id="@+id/show_images"
-        android:title="@string/show_images"
-        app:showAsAction="never" />
     <item android:id="@+id/all_record"
         android:title="@string/all_record"
         app:showAsAction="never"/>
