@@ -1,9 +1,7 @@
 package com.example.speciesrecord;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -20,17 +18,17 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     protected static String levelNow;
     protected static String recordNow;
+    protected static boolean isLightweight = true;
     private ArrayList<String> recordNames;
-    protected static SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,10 +41,18 @@ public class MainActivity extends AppCompatActivity {
     public void init() {
 
         FileOperation.verifyStoragePermissions(this);//申请读写权限
-        addDefaultFile();//配置默认记录
         setPage();//绑定初始化toolbar和FAB
+        addDefaultFile();//配置默认记录
         dataInit();//初始化数据
         loadList();//加载每个层次序列
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        if(!isLightweight)
+            menu.findItem(R.id.is_lightweight).setChecked(false);
+        return true;
     }
 
     //绑定初始化toolbar和FAB
@@ -62,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
         add_fab.setOnClickListener(view -> {
             if (recordNow.equals("Initial Record by Jeffrey")) {
                 new AlertDialog.Builder(this)
-                        .setMessage("不得更改0.0")
+                        .setMessage("不得更改初始配置0.0\n点击右上角菜单栏中新的记录\n开始属于自己的记录吧~")
                         .setPositiveButton("确定", (dialog, which) -> {
                         })
                         .create().show();
@@ -102,12 +108,111 @@ public class MainActivity extends AppCompatActivity {
         } else if (item.getItemId() == R.id.delete) {
             deleteThis();
             return true;
+        } else if(item.getItemId() == R.id.share_record) {
+            shareRecord();
+            return true;
+        } else if (item.getItemId() == R.id.is_lightweight) {
+            changeStorageMode(item);
+            return true;
         } else if (item.getItemId() == android.R.id.home) {
             toHigherLevel();
             return true;
         } else {
             return super.onOptionsItemSelected(item);
         }
+    }
+
+    public void shareRecord() {
+//        System.out.println(getExternalFilesDir("").getAbsolutePath());
+//        FileOperation.shareFile(this, getExternalFilesDir("").getAbsolutePath() + "/images/Initial Record by Jeffrey" + "/" + "明窗蛱蝶_1.jpg");
+        new AlertDialog.Builder(this)
+                .setMessage("你确定要分享这条记录吗？")
+                .setPositiveButton("取消", (dialog, which) -> {
+                })
+                .setNegativeButton("确定", (dialog, which) -> {
+                    File dir = new File(getExternalFilesDir("").getAbsolutePath() + "/temp/" + recordNow);
+                    if(!dir.exists()) if(!dir.mkdirs()) return;
+                    FileOperation.copyFile(getExternalFilesDir("").getAbsolutePath() + "/databases/" + recordNow + ".db",
+                            dir.getAbsolutePath(), null);
+                    SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                            getExternalFilesDir("").getAbsolutePath()
+                                    + "/databases/" + recordNow + ".db", null);
+                    dir = new File(getExternalFilesDir("").getAbsolutePath() + "/temp/" + recordNow + "/" + recordNow);
+                    if(!dir.mkdir()) return;
+                    Cursor cursor = db.rawQuery("select name from levels where level = 6", null);
+                    if(cursor.getCount() > 0) {
+                        cursor.moveToFirst();
+                        String temp = cursor.getString(0);
+                        Cursor cursor1 = db.rawQuery("select * from " + temp + " ORDER BY _id", null);
+                        if(cursor1.getCount() > 0) {
+                            cursor1.moveToFirst();
+                            FileOperation.getSaveImage(cursor1.getString(0), dir.getAbsolutePath(), temp, cursor1.getInt(2));
+                            while (cursor1.moveToNext()) {
+                                FileOperation.getSaveImage(cursor1.getString(0), dir.getAbsolutePath(), temp, cursor1.getInt(2));
+                            }
+                            cursor1.close();
+                        }
+                        while (cursor.moveToNext()) {
+                            temp = cursor.getString(0);
+                            cursor1 = db.rawQuery("select * from " + temp, null);
+                            if(cursor1.getCount() > 0) {
+                                cursor1.moveToFirst();
+                                FileOperation.getSaveImage(cursor1.getString(0), dir.getAbsolutePath(), temp, cursor1.getInt(2));
+                                while (cursor1.moveToNext()) {
+                                    FileOperation.getSaveImage(cursor1.getString(0), dir.getAbsolutePath(), temp, cursor1.getInt(2));
+                                }
+                            }
+                            cursor1.close();
+                        }
+                        cursor.close();
+                    }
+                    try {
+                        FileOperation.toZip(getExternalFilesDir("").getAbsolutePath() + "/temp/" + recordNow,
+                                new FileOutputStream(new File(getExternalFilesDir("").getAbsolutePath() + "/temp/" + recordNow + ".zip")),
+                                true);
+                    } catch (FileNotFoundException e) {
+                        System.out.println(e.toString());
+                    }
+                    FileOperation.delFolder(getExternalFilesDir("").getAbsolutePath() + "/temp/" + recordNow);
+                    FileOperation.shareFile(this, getExternalFilesDir("").getAbsolutePath() + "/temp/" + recordNow + ".zip");
+                })
+                .create().show();
+    }
+
+    public void changeStorageMode(MenuItem item) {
+        String temp = "使用";
+        if (isLightweight) {
+            temp = "取消";
+        }
+        new AlertDialog.Builder(this)
+                .setMessage("你确定要" + temp + "轻量模式吗？\n" +
+                        "(在轻量模式下，app只记录图片在手机中的存储位置，占用空间小，但如果删除图片或改变存储位置，都会导致无法找到对应图片；\n" +
+                        "不使用轻量模式时，app会压缩图片进行存储，占用空间稍大，且只支持jpg格式图片！；\n" +
+                        "之前进行的存储不会改变。)")
+                .setPositiveButton("取消", (dialog, which) -> {
+                })
+                .setNegativeButton("确定", (dialog, which) -> {
+                    if(isLightweight) {
+                        isLightweight = false;
+                        item.setChecked(false);
+                        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                                getExternalFilesDir("").getAbsolutePath()
+                                        + "/databases/SpeciesRecord.db", null);
+                        ContentValues contentValues = new ContentValues();
+                        contentValues.put("condition", "false");
+                        db.update("conditions", contentValues, " name = ?", new String[]{"is_lightweight"});
+                    } else {
+                        isLightweight = true;
+                        item.setChecked(true);
+                        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                                getExternalFilesDir("").getAbsolutePath()
+                                        + "/databases/SpeciesRecord.db", null);
+                        ContentValues contentValues = new ContentValues();
+                        contentValues.put("condition", "true");
+                        db.update("conditions", contentValues, " name = ?", new String[]{"is_lightweight"});
+                    }
+                })
+                .create().show();
     }
 
     //查看所有记录，并可跳转
@@ -153,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
                     getExternalFilesDir("").getAbsolutePath()
                             + "/databases/SpeciesRecord.db", null);
             Cursor cursor = db.rawQuery("select record from records where record = ?", new String[]{newName});
-            if(cursor.getCount() > 0) {
+            if (cursor.getCount() > 0) {
                 new AlertDialog.Builder(this)
                         .setMessage("该名称记录已存在")
                         .setPositiveButton("确定", (dialog, which) -> {
@@ -194,13 +299,13 @@ public class MainActivity extends AppCompatActivity {
         }
         new AlertDialog.Builder(this)
                 .setMessage("你确定要删除此分类及其下所有的记录吗")
-                .setPositiveButton("确定", ((dialog, which) -> {
+                .setNegativeButton("确定", (dialog, which) -> {
                     SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
                             getExternalFilesDir("").getAbsolutePath()
                                     + "/databases/SpeciesRecord.db", null);
-                    if(recordNow.equals(levelNow)) {
+                    if (recordNow.equals(levelNow)) {
                         File file = new File(getExternalFilesDir("").getAbsolutePath() + "/databases/" + recordNow + ".db");
-                        if(!file.delete()) {
+                        if (!file.delete()) {
                             System.out.println("fail");
                             return;
                         }
@@ -211,10 +316,6 @@ public class MainActivity extends AppCompatActivity {
                         levelNow = "Initial Record by Jeffrey";
                         recordNow = levelNow;
                     } else {
-//                        //递归删除，未完成
-//                        String temp = sharedPreferences.getString(levelNow + "_previous", null);
-//                        SharedPreferencesOperation.deleteLevel(levelNow);
-//                        levelNow = temp;
                         db = SQLiteDatabase.openOrCreateDatabase(
                                 getExternalFilesDir("").getAbsolutePath()
                                         + "/databases/" + recordNow + ".db", null);
@@ -223,12 +324,11 @@ public class MainActivity extends AppCompatActivity {
                         levelNow = cursor.getString(0);
                         cursor.close();
                         DatabaseOperation.deleteLevel(db, levelNow);
-
                     }
                     dataInit();
                     loadList();
-                }))
-                .setNegativeButton("取消", (dialog, which) -> {
+                })
+                .setPositiveButton("取消", (dialog, which) -> {
                 })
                 .create().show();
     }
@@ -253,7 +353,7 @@ public class MainActivity extends AppCompatActivity {
     //ok
     public void addDefaultFile() {
         File databaseFile = new File(getExternalFilesDir("").getAbsolutePath() + "/databases");
-        if(databaseFile.mkdirs()) {
+        if (databaseFile.mkdirs()) {
             SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
                     getExternalFilesDir("").getAbsolutePath()
                             + "/databases/SpeciesRecord.db", null);
@@ -261,9 +361,13 @@ public class MainActivity extends AppCompatActivity {
             db.execSQL(SQL);
             SQL = "insert into records(record, is_now) values('Initial Record by Jeffrey', 1)";
             db.execSQL(SQL);
+            SQL = "create table conditions(name varchar(15), condition varchar(15))";
+            db.execSQL(SQL);
+            SQL = "insert into conditions(name, condition) values('is_lightweight', 'true')";
+            db.execSQL(SQL);
             recordNow = "Initial Record by Jeffrey";
             levelNow = "Initial Record by Jeffrey";
-            String imgPath = getExternalFilesDir("").getAbsolutePath() + "/images";
+            String imgPath = getExternalFilesDir("").getAbsolutePath() + "/images/Initial Record by Jeffrey";
             File imgFile = new File(imgPath);
             if (!imgFile.mkdirs()) {
                 return;
@@ -362,6 +466,12 @@ public class MainActivity extends AppCompatActivity {
             recordNow = cursor.getString(0);
             levelNow = recordNow;
             cursor.close();
+            cursor = db.rawQuery("select condition from conditions where name = ?", new String[]{"is_lightweight"});
+            cursor.moveToFirst();
+            if(cursor.getString(0).equals("false")) {
+                isLightweight = false;
+            }
+            cursor.close();
         }
     }
 
@@ -375,7 +485,7 @@ public class MainActivity extends AppCompatActivity {
         Cursor cursor = db.rawQuery("select record from records", null);
         cursor.moveToFirst();
         this.recordNames.add(cursor.getString(0));
-        while(cursor.moveToNext()) {
+        while (cursor.moveToNext()) {
             this.recordNames.add(cursor.getString(0));
         }
         cursor.close();
@@ -394,20 +504,20 @@ public class MainActivity extends AppCompatActivity {
                 getExternalFilesDir("").getAbsolutePath()
                         + "/databases/" + recordNow + ".db", null);
         Cursor cursor = db.rawQuery("select level from levels where name = ?", new String[]{levelNow});
-        if(cursor.getCount() > 0) {
+        if (cursor.getCount() > 0) {
             cursor.moveToFirst();
-            if(cursor.getInt(0) == 6) {
+            if (cursor.getInt(0) == 6) {
                 Cursor cursor1 = db.rawQuery("select * from " + levelNow, null);
-                if(cursor1.getCount() > 0) {
+                if (cursor1.getCount() > 0) {
                     cursor1.moveToFirst();
                     imagePaths.add(cursor1.getString(0));
-                    if(cursor1.getString(1).equals(""))
+                    if (cursor1.getString(1).equals(""))
                         imageNotes.add(null);
                     else
                         imageNotes.add(cursor1.getString(1));
                     while (cursor1.moveToNext()) {
                         imagePaths.add(cursor1.getString(0));
-                        if(cursor1.getString(1).equals(""))
+                        if (cursor1.getString(1).equals(""))
                             imageNotes.add(null);
                         else
                             imageNotes.add(cursor1.getString(1));
@@ -418,21 +528,23 @@ public class MainActivity extends AppCompatActivity {
                 PhotoAdapter photoAdapter = new PhotoAdapter(MainActivity.this, R.layout.photo_list, photos);
                 ListView listView = findViewById(R.id.list_view);
                 listView.setAdapter(photoAdapter);
+                listView.setOnItemClickListener((parent, view, position, id) -> {
+                });
                 return;
             }
         }
         cursor.close();
         cursor = db.rawQuery("select name, note from levels where previous = ?", new String[]{levelNow});
-        if(cursor.getCount() > 0) {
+        if (cursor.getCount() > 0) {
             cursor.moveToFirst();
             tempNames.add(cursor.getString(0));
-            if(cursor.getString(1).equals(""))
+            if (cursor.getString(1).equals(""))
                 tempNotes.add(null);
             else
                 tempNotes.add(cursor.getString(1));
             while (cursor.moveToNext()) {
                 tempNames.add(cursor.getString(0));
-                if(cursor.getString(1).equals(""))
+                if (cursor.getString(1).equals(""))
                     tempNotes.add(null);
                 else
                     tempNotes.add(cursor.getString(1));

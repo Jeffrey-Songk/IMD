@@ -4,9 +4,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import android.app.Activity;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -16,12 +14,10 @@ import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.Toast;
 import androidx.appcompat.widget.Toolbar;
 import java.util.ArrayList;
@@ -117,15 +113,6 @@ public class NewSpecies extends AppCompatActivity {
                             }
                         }
                         cursor.close();
-//                        int where = MainActivity.sharedPreferences.getInt(mLevelNames[finalI], -1);
-//                        if(where != -1) {
-//                            mLevelEditTexts[finalI].setText(MainActivity.sharedPreferences.getString(mLevelNames[finalI] + "_note", null));
-//                            String previous = MainActivity.sharedPreferences.getString(mLevelNames[finalI] + "_previous", null);
-//                            int where1 = MainActivity.sharedPreferences.getInt(previous, -1);
-//                            if(where1 != -1) {
-//                                mLevelListeners[where1].setText(previous);
-//                            }
-//                        }
                     } else {
                         mLevelEditTexts[finalI].setVisibility(View.GONE);
                         mLevelNames[finalI] = null;
@@ -304,10 +291,24 @@ public class NewSpecies extends AppCompatActivity {
                 }
                 cursor.close();
                 if(i == 6) {
+                    DatabaseOperation.createSpeciesImagesTable(db, mLevelNames[i]);
                     if(imagePaths.size() > 0) {
-                        DatabaseOperation.createSpeciesImagesTable(db, mLevelNames[i]);
-                        for(int j = 0; j < imagePaths.size(); j++) {
-                            DatabaseOperation.insertImagetoTable(db, mLevelNames[i], imagePaths.get(j), imageNotes.get(j));
+                        if(MainActivity.isLightweight) {
+                            for (int j = 0; j < imagePaths.size(); j++) {
+                                DatabaseOperation.insertImagetoTable(db, mLevelNames[i], imagePaths.get(j), imageNotes.get(j));
+                            }
+                        } else {
+                            for (int j = 0; j < imagePaths.size(); j++) {
+                                DatabaseOperation.insertImagetoTable(
+                                        db,
+                                        mLevelNames[i],
+                                        FileOperation.getSaveImage(
+                                                imagePaths.get(j),
+                                                getExternalFilesDir("").getAbsolutePath() + "/images/" + MainActivity.recordNow,
+                                                mLevelNames[i],
+                                                -1),
+                                        imageNotes.get(j));
+                            }
                         }
                     }
                 }

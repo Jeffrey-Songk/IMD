@@ -19,7 +19,7 @@ public class DatabaseOperation {
     public static void createSpeciesImagesTable(SQLiteDatabase db, String name) {
         if(name.equals(""))
             return;
-        String SQL = "create table IF NOT EXISTS " + name + " (path varchar(127), note varchar(127))";
+        String SQL = "create table IF NOT EXISTS " + name + " (path varchar(127), note varchar(127), _id INTEGER PRIMARY KEY AUTOINCREMENT)";
         db.execSQL(SQL);
     }
 

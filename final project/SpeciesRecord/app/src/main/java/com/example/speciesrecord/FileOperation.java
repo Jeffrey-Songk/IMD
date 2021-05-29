@@ -1,14 +1,23 @@
 package com.example.speciesrecord;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.FileProvider;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -17,12 +26,155 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class FileOperation {
+    private static final int  BUFFER_SIZE = 2 * 1024;
+    //分享记录的过程：1.把数据库文件以及对应的所有图片文件复制到SpeciesRecord/recordNow文件夹下
+    //对recordNow文件夹压缩为zip
+    //分享文件
+    //删除文件
+    public static void toZip(String srcDir, OutputStream out, boolean KeepDirStructure) {
+        long start = System.currentTimeMillis();
+        ZipOutputStream zos = null ;
+        try {
+            zos = new ZipOutputStream(out);
+            File sourceFile = new File(srcDir);
+            compress(sourceFile,zos,sourceFile.getName(),KeepDirStructure);
+            long end = System.currentTimeMillis();
+            System.out.println("压缩完成，耗时：" + (end - start) +" ms");
+        } catch (Exception e) {
+            throw new RuntimeException("zip error from ZipUtils",e);
+        }finally{
+            if(zos != null){
+                try {
+                    zos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private static void compress(File sourceFile, ZipOutputStream zos, String name,
+                                 boolean KeepDirStructure) {
+        byte[] buf = new byte[BUFFER_SIZE];
+        try {
+            if (sourceFile.isFile()) {
+                // 向zip输出流中添加一个zip实体，构造器中name为zip实体的文件的名字
+                zos.putNextEntry(new ZipEntry(name));
+                // copy文件到zip输出流中
+                int len;
+                FileInputStream in = new FileInputStream(sourceFile);
+                while ((len = in.read(buf)) != -1) {
+                    zos.write(buf, 0, len);
+                }
+                // Complete the entry
+                zos.closeEntry();
+                in.close();
+            } else {
+                File[] listFiles = sourceFile.listFiles();
+                if (listFiles == null || listFiles.length == 0) {
+                    // 需要保留原来的文件结构时,需要对空文件夹进行处理
+                    if (KeepDirStructure) {
+                        // 空文件夹的处理
+                        zos.putNextEntry(new ZipEntry(name + "/"));
+                        // 没有文件，不需要文件的copy
+                        zos.closeEntry();
+                    }
+                } else {
+                    for (File file : listFiles) {
+                        // 判断是否需要保留原来的文件结构
+                        if (KeepDirStructure) {
+                            // 注意：file.getName()前面需要带上父文件夹的名字加一斜杠,
+                            // 不然最后压缩包中就不能保留原来的文件结构,即：所有文件都跑到压缩包根目录下了
+                            compress(file, zos, name + "/" + file.getName(), KeepDirStructure);
+                        } else {
+                            compress(file, zos, file.getName(), KeepDirStructure);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println(e.toString());
+        }
+    }
+
+    public static void shareFile(Context context, String fileName) {
+        File file = new File(fileName);
+        if (file.exists()) {
+            Intent share = new Intent(Intent.ACTION_SEND);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                Uri contentUri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".fileprovider"  ,file);
+                share.putExtra(Intent.EXTRA_STREAM, contentUri);
+                share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } else {
+                share.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
+            }
+            share.setType("application/x-zip-compressed");//此处可发送多种文件
+            share.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            context.startActivity(Intent.createChooser(share, "分享文件"));
+        }
+    }
+
+
+    // 图片按比例大小压缩方法并获取压缩后图片的路径
+    public static String getSaveImage(String srcPath, String newPath, String name, int i) {
+        BitmapFactory.Options newOpts = new BitmapFactory.Options();
+        // 开始读入图片，此时把options.inJustDecodeBounds 设回true了
+        newOpts.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(srcPath, newOpts);
+        int w = newOpts.outWidth;
+        int h = newOpts.outHeight;
+        float hh = 600f;
+        float ww = 600f;
+        int be = 1;// be=1表示不缩放
+        if (w > h && w > ww) {
+            be = (int) (newOpts.outWidth / ww);
+        } else if (w < h && h > hh) {
+            be = (int) (newOpts.outHeight / hh);
+        }
+        if (be <= 0)
+            be = 1;
+        newOpts.inJustDecodeBounds = false;
+        newOpts.inSampleSize = be;
+        Bitmap bitmap = BitmapFactory.decodeFile(srcPath, newOpts);
+        String type = getFileType(srcPath);
+        if(i == -1) {
+            i = 1;
+            File file = new File(newPath + "/" + name + "_" + i + type);
+            while (file.exists()) {
+                i++;
+                file = new File(newPath + "/" + name + "_" + i + type);
+            }
+        }
+        String result = newPath + "/" + name + "_" + i + type;
+
+        File dir = new File(newPath);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        File file2 = new File(result);
+        try {
+            FileOutputStream out = new FileOutputStream(file2);
+            if (bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)) {
+                out.flush();
+                out.close();
+                bitmap.recycle();
+            }
+        } catch (Exception e) {
+            System.out.println(e.toString());
+        }
+        return file2.getPath();// 压缩好比例大小后再进行质量压缩
+    }
+
     //在对应path的文件下写入content
     public static void writeFile(String path, String content) {
         File file = new File(path);
@@ -117,11 +269,43 @@ public class FileOperation {
     }
 
     //复制单个文件
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    public static void copyFile(String oldPath, String newPath) {
+    public static void copyFile(String srcPath, String destDir, String name) {
+        File srcFile = new File(srcPath);
+        if (!srcFile.exists()) { // 源文件不存在
+            System.out.println("源文件不存在");
+            return;
+        }
+        File file = new File(srcPath);
+        String fileName;
+        if(name == null) {
+            fileName = file.getName();
+        } else {
+            fileName = name + FileOperation.getFileType(srcPath);
+        }
+        String destPath = destDir + "/" + fileName;
+        if (destPath.equals(srcPath)) { // 源文件路径和目标文件路径重复
+            System.out.println("源文件路径和目标文件路径重复!");
+            return;
+        }
+        File destFile = new File(destPath);
+        if (destFile.exists() && destFile.isFile()) { // 该路径下已经有一个同名文件
+            System.out.println("目标目录下已有同名文件!");
+            return;
+        }
+
+        File destFileDir = new File(destDir);
+        destFileDir.mkdirs();
         try {
-            Files.copy(Paths.get(oldPath), Paths.get(newPath));
-        } catch (Exception e) {
+            FileInputStream fis = new FileInputStream(srcPath);
+            FileOutputStream fos = new FileOutputStream(destFile);
+            byte[] buf = new byte[1024];
+            int c;
+            while ((c = fis.read(buf)) != -1) {
+                fos.write(buf, 0, c);
+            }
+            fis.close();
+            fos.close();
+        } catch (IOException e) {
             System.out.println(e.toString());
         }
     }
@@ -169,7 +353,7 @@ public class FileOperation {
     //移动文件到指定目录
     @RequiresApi(api = Build.VERSION_CODES.O)
     public static void moveFile(String oldPath, String newPath) {
-        copyFile(oldPath, newPath);
+        copyFile(oldPath, newPath, null);
         delFile(oldPath);
 
     }

@@ -21,5 +21,7 @@
     <string name="add_confirm">确认添加</string>
     <string name="add_photos_button">添加图片(已选0张)</string>
     <string name="delete">删除</string>
+    <string name="is_lightweight">轻量模式</string>
+    <string name="share_record">分享记录</string>
 
 </resources>

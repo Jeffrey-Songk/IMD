@@ -8,7 +8,15 @@
     <item android:id="@+id/new_record"
         android:title="@string/new_record"
         app:showAsAction="never"/>
+    <item android:id="@+id/share_record"
+        android:title="@string/share_record"
+        app:showAsAction="never"/>
     <item android:id="@+id/delete"
         android:title="@string/delete"
+        app:showAsAction="never"/>
+    <item android:checkable="true"
+        android:checked="true"
+        android:id="@+id/is_lightweight"
+        android:title="@string/is_lightweight"
         app:showAsAction="never"/>
 </menu>
