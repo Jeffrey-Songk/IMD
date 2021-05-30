@@ -20,12 +20,15 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 import androidx.appcompat.widget.Toolbar;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NewSpecies extends AppCompatActivity {
+    private String startPath;
     private String[] mLevelNames;
     private String[] mLevelNotes;
     private ArrayList<String> imagePaths;
@@ -41,10 +44,93 @@ public class NewSpecies extends AppCompatActivity {
 
     public void init() {
         FileOperation.verifyStoragePermissions(this);
+        judgeToMain();
         setPage();
         dataInit();
         setLevelsListener();
         setNameListener();
+    }
+
+    public void judgeToMain() {
+        startPath = getExternalFilesDir("").getAbsolutePath();
+        Intent intent = getIntent();
+        String action = intent.getAction();
+        if (Intent.ACTION_VIEW.equals(action)) {
+            Uri uri = intent.getData();
+            if(new File(startPath + "/temp").exists()) {
+                FileOperation.delFolder(startPath + "/temp");
+            }
+            if (uri != null) {
+                String path = uri.getPath();
+                String name = FileOperation.getExactName(path);
+                SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(startPath + "/databases/SpeciesRecord.db", null);
+                Cursor cursor = db.rawQuery("select record from records where record = ?", new String[]{name});
+                if(cursor.getCount() > 0) {
+                    Toast.makeText(this, "已存在对应记录名称，打开失败", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                cursor.close();
+                for(int i = 1; i < path.length(); i++) {
+                    if(String.valueOf(path.charAt(i)).equals("/")) {
+                        path = path.substring(i + 1);
+                        break;
+                    }
+                }
+                FileOperation.unZip(new File(path), startPath + "/temp");
+                FileOperation.moveFile(startPath + "/temp/" + name + "/" + name + ".db",
+                        startPath + "/databases");
+                FileOperation.moveFolder(startPath + "/temp/" + name,
+                        startPath + "/images");
+                ContentValues contentValues = new ContentValues();
+                contentValues.put("is_now", 0);
+                db.update("records", contentValues, "is_now = 1", null);
+                contentValues = new ContentValues();
+                contentValues.put("record", name);
+                contentValues.put("is_now", 1);
+                db.insert("records", null, contentValues);
+                db = SQLiteDatabase.openOrCreateDatabase(
+                        startPath
+                                + "/databases/" + name + ".db", null);
+                Cursor cursor1 = db.rawQuery("select name from levels where level = 6", null);
+                if(cursor1.getCount() > 0) {
+                    cursor1.moveToFirst();
+                    String species = cursor1.getString(0);
+                    Cursor cursor2 = db.rawQuery("select * from " + species, null);
+                    if(cursor2.getCount() > 0) {
+                        cursor2.moveToFirst();
+                        contentValues = new ContentValues();
+                        contentValues.put("path", startPath + "/images/" + name + "/" + species + "_" + cursor2.getInt(2) + ".jpg");
+                        db.update(species, contentValues, "_id = ?", new String[]{String.valueOf(cursor2.getInt(2))});
+                        while (cursor2.moveToNext()) {
+                            contentValues = new ContentValues();
+                            contentValues.put("path", startPath + "/images/" + name + "/" + species + "_" + cursor2.getInt(2) + ".jpg");
+                            db.update(species, contentValues, "_id = ?", new String[]{String.valueOf(cursor2.getInt(2))});
+                        }
+                    }
+                    cursor2.close();
+                    while (cursor1.moveToNext()) {
+                        species = cursor1.getString(0);
+                        cursor2 = db.rawQuery("select * from " + species, null);
+                        if(cursor2.getCount() > 0) {
+                            cursor2.moveToFirst();
+                            contentValues = new ContentValues();
+                            contentValues.put("path", startPath + "/images/" + name + "/" + species + "_" + cursor2.getInt(2) + ".jpg");
+                            db.update(species, contentValues, "_id = ?", new String[]{String.valueOf(cursor2.getInt(2))});
+                            while (cursor2.moveToNext()) {
+                                contentValues = new ContentValues();
+                                contentValues.put("path", startPath + "/images/" + name + "/" + species + "_" + cursor2.getInt(2) + ".jpg");
+                                db.update(species, contentValues, "_id = ?", new String[]{String.valueOf(cursor2.getInt(2))});
+                            }
+                        }
+                        cursor2.close();
+                    }
+                }
+                cursor1.close();
+            }
+
+            Intent intent1 = new Intent(NewSpecies.this, MainActivity.class);
+            startActivity(intent1);
+        }
     }
 
     public void setPage() {
@@ -81,7 +167,7 @@ public class NewSpecies extends AppCompatActivity {
                 findViewById(R.id.genus_name)
         };
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
-                getExternalFilesDir("").getAbsolutePath()
+                startPath
                         + "/databases/" + MainActivity.recordNow + ".db", null);
         for (int i = 0; i < 6; i++) {
             int finalI = i;
@@ -238,7 +324,7 @@ public class NewSpecies extends AppCompatActivity {
     //确认添加按钮
     public void addConfirm(View view) {
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
-                getExternalFilesDir("").getAbsolutePath()
+                startPath
                         + "/databases/" + MainActivity.recordNow + ".db", null);
         Cursor cursor, cursor1, cursor2;
         int rationality = -1;
@@ -304,7 +390,7 @@ public class NewSpecies extends AppCompatActivity {
                                         mLevelNames[i],
                                         FileOperation.getSaveImage(
                                                 imagePaths.get(j),
-                                                getExternalFilesDir("").getAbsolutePath() + "/images/" + MainActivity.recordNow,
+                                                startPath + "/images/" + MainActivity.recordNow,
                                                 mLevelNames[i],
                                                 -1),
                                         imageNotes.get(j));

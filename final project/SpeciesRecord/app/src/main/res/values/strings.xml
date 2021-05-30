@@ -23,5 +23,6 @@
     <string name="delete">删除</string>
     <string name="is_lightweight">轻量模式</string>
     <string name="share_record">分享记录</string>
+    <string name="contact">联系作者</string>
 
 </resources>

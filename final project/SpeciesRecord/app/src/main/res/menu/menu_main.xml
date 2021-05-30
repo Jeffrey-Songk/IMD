@@ -19,4 +19,7 @@
         android:id="@+id/is_lightweight"
         android:title="@string/is_lightweight"
         app:showAsAction="never"/>
+    <item android:id="@+id/contact"
+        android:title="@string/contact"
+        app:showAsAction="never" />
 </menu>
